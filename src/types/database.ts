@@ -151,6 +151,56 @@ export type Database = {
           }
         ];
       };
+      physical_assessments: {
+        Row: {
+          id: string;
+          user_id: string;
+          week: number;
+          weight_kg: number | null;
+          waist_cm: number | null;
+          abdomen_cm: number | null;
+          arm_cm: number | null;
+          thigh_cm: number | null;
+          neck_cm: number | null;
+          calf_cm: number | null;
+          notes: string | null;
+          front_photo_url: string | null;
+          side_photo_url: string | null;
+          back_photo_url: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          week: number;
+          weight_kg?: number | null;
+          waist_cm?: number | null;
+          abdomen_cm?: number | null;
+          arm_cm?: number | null;
+          thigh_cm?: number | null;
+          neck_cm?: number | null;
+          calf_cm?: number | null;
+          notes?: string | null;
+          front_photo_url?: string | null;
+          side_photo_url?: string | null;
+          back_photo_url?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["physical_assessments"]["Insert"]
+        >;
+        Relationships: [
+          {
+            foreignKeyName: "physical_assessments_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

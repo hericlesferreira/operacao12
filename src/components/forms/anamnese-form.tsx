@@ -13,7 +13,11 @@ import {
   type BiologicalSex
 } from "@/lib/calculations/metabolic";
 import { supabase } from "@/lib/supabase/client";
-import { anamneseSchema, type AnamneseFormData } from "@/schemas/anamnese";
+import {
+  anamneseSchema,
+  calculateAge,
+  type AnamneseFormData
+} from "@/schemas/anamnese";
 
 const draftStorageKey = "operacao12s:anamnese-draft";
 
@@ -29,31 +33,71 @@ const goalOptions = [
 
 const difficultyOptions = [
   "Ansiedade",
-  "Doces",
-  "Beliscos",
-  "Fome a noite",
-  "Final de semana",
+  "Vontades de doces",
+  "Beliscar durante o dia",
+  "Sentir muita fome a noite",
+  "Finais de semana",
+  "Eventos sociais (festas, aniversarios)",
   "Falta de rotina",
   "Comer fora",
-  "Comeco bem e depois abandono"
+  "Comeco bem mas depois abandono"
 ];
+
+const dietOptions = [
+  "Vegetariano",
+  "Vegano",
+  "Ovolactovegetariano",
+  "Carnivora",
+  "Intolerancia a lactose",
+  "Intolerancia ao gluten"
+];
+
+const allergyOptions = ["Corante", "Ovo", "Gluten", "APLV", "Outro"];
 
 const healthOptions = [
-  "Nenhuma",
-  "Diabetes",
-  "Pre-diabetes",
-  "Hipertensao",
-  "Colesterol alterado",
-  "Triglicerideos alterados",
-  "Hipotireoidismo",
-  "Uso de medicacao continua",
-  "Transtorno alimentar relatado"
+  { label: "Nenhuma" },
+  { label: "Diabetes", helper: "Acucar no sangue" },
+  { label: "Hipertensao", helper: "Alteracao de pressao arterial" },
+  { label: "Dislipidemia", helper: "Colesterol ruim" },
+  { label: "Hipotireoidismo" },
+  { label: "Hipertireoidismo" },
+  { label: "Ansiedade" },
+  { label: "Outro" }
 ];
 
+const measurementQuestions = {
+  weightKg: {
+    title: "Qual e o seu peso atualizado?",
+    helper: "Informe em kg. Exemplo: 82.5"
+  },
+  neckCm: {
+    title: "Qual a circunferencia do pescoco?",
+    helper: "Meça ao redor do pescoço, mantendo a fita reta e sem apertar."
+  },
+  armCm: {
+    title: "Qual a circunferencia do braco?",
+    helper: "Meça o braço relaxado, no ponto médio entre ombro e cotovelo."
+  },
+  waistCm: {
+    title: "Qual a circunferencia da cintura?",
+    helper: "Meça na região mais estreita do tronco, com a fita paralela ao chão."
+  },
+  abdomenCm: {
+    title: "Qual a circunferencia do abdomen?",
+    helper: "Meça na altura do umbigo, sem prender a respiração."
+  },
+  thighCm: {
+    title: "Qual a circunferencia da coxa?",
+    helper: "Meça a coxa em pé, no ponto médio entre quadril e joelho."
+  },
+  calfCm: {
+    title: "Qual a circunferencia da panturrilha?",
+    helper: "Meça a região mais larga da panturrilha."
+  }
+} as const;
+
 type QuestionKey =
-  | "fullName"
-  | "age"
-  | "weightKg"
+  | "birthDate"
   | "heightCm"
   | "biologicalSex"
   | "mainGoals"
@@ -63,18 +107,25 @@ type QuestionKey =
   | "activityDescription"
   | "sleepHours"
   | "sleepQuality"
-  | "foodPreference"
+  | "foodPreferences"
+  | "dislikedFoods"
+  | "foodAllergies"
+  | "foodAllergyOther"
   | "healthConditions"
+  | "healthConditionOther"
   | "motivation"
   | "weekendDifficulty"
+  | "weekendDifficultyReason"
   | "sweetsDifficulty"
-  | "nightHunger";
+  | "nightHunger"
+  | keyof typeof measurementQuestions;
 
 type Question = {
   key: QuestionKey;
   title: string;
   helper?: string;
   fields: Array<keyof AnamneseFormData>;
+  measurement?: boolean;
 };
 
 export function AnamneseForm() {
@@ -96,21 +147,21 @@ export function AnamneseForm() {
     defaultValues: {
       biologicalSex: "mulher",
       activityLevel: "sedentario",
-      foodPreference: "onivoro",
       mainGoals: [],
       mainDifficulties: [],
-      healthConditions: ["Nenhuma"],
+      foodPreferences: [],
+      foodAllergies: [],
+      healthConditions: [],
       motivation: 7,
-      weekendDifficulty: false,
-      sweetsDifficulty: false,
-      nightHunger: false
+      weekendDifficulty: "nao",
+      sweetsDifficulty: "nao",
+      nightHunger: "nao"
     }
   });
 
   const values = watch();
-  const questions = useMemo(() => buildQuestions(values.activityLevel), [
-    values.activityLevel
-  ]);
+  const age = values.birthDate ? calculateAge(values.birthDate) : 0;
+  const questions = useMemo(() => buildQuestions(values), [values]);
   const currentQuestion = questions[questionIndex] ?? questions[0];
   const progress = Math.round(((questionIndex + 1) / questions.length) * 100);
 
@@ -118,7 +169,7 @@ export function AnamneseForm() {
     const hasEnoughData =
       values.biologicalSex &&
       values.activityLevel &&
-      values.age &&
+      age >= 16 &&
       values.weightKg &&
       values.heightCm;
 
@@ -129,11 +180,11 @@ export function AnamneseForm() {
     return calculateOperation12sMetabolism({
       biologicalSex: values.biologicalSex as BiologicalSex,
       activityLevel: values.activityLevel as ActivityLevel,
-      age: Number(values.age),
+      age,
       weightKg: Number(values.weightKg),
       heightCm: Number(values.heightCm)
     });
-  }, [values]);
+  }, [age, values]);
 
   useEffect(() => {
     const savedDraft = window.localStorage.getItem(draftStorageKey);
@@ -197,20 +248,32 @@ export function AnamneseForm() {
         return;
       }
 
+      const userAge = calculateAge(data.birthDate);
       const metabolic = calculateOperation12sMetabolism({
         biologicalSex: data.biologicalSex,
         activityLevel: data.activityLevel,
-        age: data.age,
+        age: userAge,
         weightKg: data.weightKg,
         heightCm: data.heightCm
       });
+
+      const {
+        data: { fullName }
+      } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", user.id)
+        .single()
+        .then(({ data: profile }) => ({
+          data: { fullName: profile?.full_name ?? user.email ?? "Participante" }
+        }));
 
       const { data: anamnese, error: anamneseError } = await supabase
         .from("anamneses")
         .insert({
           user_id: user.id,
-          full_name: data.fullName,
-          age: data.age,
+          full_name: fullName,
+          age: userAge,
           biological_sex: data.biologicalSex,
           weight_kg: data.weightKg,
           height_cm: data.heightCm,
@@ -220,14 +283,22 @@ export function AnamneseForm() {
           activity_level: data.activityLevel,
           sleep_hours: data.sleepHours || null,
           sleep_quality: data.sleepQuality || null,
-          health_conditions: data.healthConditions,
-          food_preference: data.foodPreference,
+          health_conditions: [
+            ...data.healthConditions,
+            ...(data.healthConditionOther ? [`Outro: ${data.healthConditionOther}`] : [])
+          ],
+          food_preference: data.foodPreferences.join(", "),
           motivation: data.motivation,
           behavioral_answers: {
+            birthDate: data.birthDate,
             weekendDifficulty: data.weekendDifficulty,
+            weekendDifficultyReason: data.weekendDifficultyReason || null,
             sweetsDifficulty: data.sweetsDifficulty,
             nightHunger: data.nightHunger,
-            activityDescription: data.activityDescription || null
+            activityDescription: data.activityDescription || null,
+            dislikedFoods: data.dislikedFoods || null,
+            foodAllergies: data.foodAllergies,
+            foodAllergyOther: data.foodAllergyOther || null
           },
           raw_answers: data,
           completed_at: new Date().toISOString()
@@ -263,6 +334,18 @@ export function AnamneseForm() {
         setIsSubmitting(false);
         return;
       }
+
+      await supabase.from("physical_assessments").upsert({
+        user_id: user.id,
+        week: 0,
+        weight_kg: data.weightKg,
+        neck_cm: data.neckCm,
+        arm_cm: data.armCm,
+        waist_cm: data.waistCm,
+        abdomen_cm: data.abdomenCm,
+        thigh_cm: data.thighCm,
+        calf_cm: data.calfCm
+      });
 
       window.localStorage.removeItem(draftStorageKey);
       router.push("/dashboard");
@@ -309,11 +392,21 @@ export function AnamneseForm() {
               </p>
             ) : null}
             <div className="mt-8">
-              <QuestionField
-                questionKey={currentQuestion.key}
-                register={register}
-                values={values}
-              />
+              {currentQuestion.measurement ? (
+                <MeasurementFrame helper={currentQuestion.helper}>
+                  <QuestionField
+                    questionKey={currentQuestion.key}
+                    register={register}
+                    values={values}
+                  />
+                </MeasurementFrame>
+              ) : (
+                <QuestionField
+                  questionKey={currentQuestion.key}
+                  register={register}
+                  values={values}
+                />
+              )}
             </div>
             <QuestionError question={currentQuestion} errors={errors} />
             {formError ? <p className="mt-4 text-sm text-red-700">{formError}</p> : null}
@@ -359,6 +452,7 @@ export function AnamneseForm() {
         <h2 className="mt-2 text-xl font-bold">Calculo da operacao</h2>
         {preview?.indicatedPlan ? (
           <div className="mt-4 space-y-3 text-sm text-graphite">
+            <p>Idade calculada: {age} anos</p>
             <p>TMB: {preview.basalMetabolicRate} kcal</p>
             <p>GET: {preview.totalEnergyExpenditure} kcal</p>
             <p>Meta inicial: {preview.cutTargetCalories} kcal</p>
@@ -369,7 +463,8 @@ export function AnamneseForm() {
           </div>
         ) : (
           <p className="mt-4 text-sm leading-6 text-graphite">
-            Preencha dados basicos para visualizar a previa do calculo.
+            Preencha data de nascimento, estatura, peso e atividade para ver a
+            previa.
           </p>
         )}
       </Card>
@@ -377,111 +472,63 @@ export function AnamneseForm() {
   );
 }
 
-function buildQuestions(activityLevel: AnamneseFormData["activityLevel"]): Question[] {
+function buildQuestions(values: Partial<AnamneseFormData>): Question[] {
   const questions: Question[] = [
-    {
-      key: "fullName",
-      title: "Qual e o seu nome completo?",
-      fields: ["fullName"]
-    },
-    {
-      key: "age",
-      title: "Qual e a sua idade?",
-      helper: "A Operacao 12S aceita participantes a partir de 16 anos.",
-      fields: ["age"]
-    },
-    {
-      key: "weightKg",
-      title: "Qual e o seu peso atual?",
-      helper: "Informe em kg. Exemplo: 82.5",
-      fields: ["weightKg"]
-    },
-    {
-      key: "heightCm",
-      title: "Qual e a sua altura?",
-      helper: "Informe em centimetros, sem casa decimal. Exemplo: 170",
-      fields: ["heightCm"]
-    },
-    {
-      key: "biologicalSex",
-      title: "Qual sexo biologico devemos usar para o calculo?",
-      fields: ["biologicalSex"]
-    },
-    {
-      key: "mainGoals",
-      title: "Quais sao seus principais objetivos?",
-      helper: "Selecione todas as opcoes que fazem sentido para voce.",
-      fields: ["mainGoals"]
-    },
-    {
-      key: "mainDifficulties",
-      title: "Quais sao suas principais dores hoje?",
-      helper: "Isso ajuda a direcionar a trilha da operacao.",
-      fields: ["mainDifficulties"]
-    },
-    {
-      key: "weightLossHistory",
-      title: "Como tem sido seu historico de emagrecimento?",
-      helper: "Responda de forma breve. Este campo e opcional.",
-      fields: ["weightLossHistory"]
-    },
-    {
-      key: "activityLevel",
-      title: "Como esta sua rotina de atividade fisica?",
-      fields: ["activityLevel"]
-    }
+    { key: "birthDate", title: "Qual e a sua data de nascimento?", fields: ["birthDate"] },
+    { key: "heightCm", title: "Qual e a sua estatura?", helper: "Informe em centimetros, sem casa decimal. Exemplo: 170", fields: ["heightCm"] },
+    { key: "biologicalSex", title: "Qual sexo biologico devemos usar para o calculo?", fields: ["biologicalSex"] },
+    { key: "mainGoals", title: "Quais sao seus principais objetivos?", helper: "Selecione todas as opcoes que fazem sentido para voce.", fields: ["mainGoals"] },
+    { key: "mainDifficulties", title: "O que mais te atrapalha hoje?", helper: "Selecione todas as opcoes que fazem sentido para sua rotina.", fields: ["mainDifficulties"] },
+    { key: "weightLossHistory", title: "Me conte mais sobre voce e sua historia com emagrecimento.", helper: "Fique a vontade para compartilhar seu contexto. Este campo ajuda a deixar a trilha mais humana.", fields: ["weightLossHistory"] },
+    { key: "activityLevel", title: "Como esta sua rotina de atividade fisica?", fields: ["activityLevel"] }
   ];
 
-  if (activityLevel !== "sedentario") {
-    questions.push({
-      key: "activityDescription",
-      title: "Qual atividade fisica voce realiza?",
-      fields: ["activityDescription"]
-    });
+  if (values.activityLevel && values.activityLevel !== "sedentario") {
+    questions.push({ key: "activityDescription", title: "Qual atividade fisica voce realiza?", fields: ["activityDescription"] });
   }
 
   questions.push(
-    {
-      key: "sleepHours",
-      title: "Quantas horas voce costuma dormir por noite?",
-      fields: ["sleepHours"]
-    },
-    {
-      key: "sleepQuality",
-      title: "Como voce avalia a qualidade do seu sono?",
-      fields: ["sleepQuality"]
-    },
-    {
-      key: "foodPreference",
-      title: "Qual e o seu tipo de dieta usual?",
-      fields: ["foodPreference"]
-    },
-    {
-      key: "healthConditions",
-      title: "Existe alguma condicao de saude importante?",
-      helper: "Selecione pelo menos uma opcao, mesmo que seja Nenhuma.",
-      fields: ["healthConditions"]
-    },
-    {
-      key: "motivation",
-      title: "De 0 a 10, qual e sua motivacao hoje?",
-      fields: ["motivation"]
-    },
-    {
-      key: "weekendDifficulty",
-      title: "Final de semana costuma atrapalhar sua rotina?",
-      fields: ["weekendDifficulty"]
-    },
-    {
-      key: "sweetsDifficulty",
-      title: "Doces sao uma dificuldade importante para voce?",
-      fields: ["sweetsDifficulty"]
-    },
-    {
-      key: "nightHunger",
-      title: "Voce sente fome ou vontade de comer a noite?",
-      fields: ["nightHunger"]
-    }
+    { key: "sleepHours", title: "Quantas horas voce costuma dormir por noite?", fields: ["sleepHours"] },
+    { key: "sleepQuality", title: "Como voce avalia a qualidade do seu sono?", fields: ["sleepQuality"] },
+    { key: "foodPreferences", title: "Qual e o seu tipo de dieta usual?", helper: "Pode escolher mais de uma opcao.", fields: ["foodPreferences"] },
+    { key: "dislikedFoods", title: "Tem algum alimento que voce nao come ou nao gosta de comer?", helper: "Se sim, escreva quais. Se nao, pode deixar em branco.", fields: ["dislikedFoods"] },
+    { key: "foodAllergies", title: "Voce possui alguma alergia alimentar?", helper: "Selecione as opcoes que se aplicam.", fields: ["foodAllergies"] }
+  );
+
+  if (values.foodAllergies?.includes("Outro")) {
+    questions.push({ key: "foodAllergyOther", title: "Qual outra alergia alimentar?", fields: ["foodAllergyOther"] });
+  }
+
+  questions.push({
+    key: "healthConditions",
+    title: "Existe alguma condicao de saude importante diagnosticada?",
+    helper: "Selecione pelo menos uma opcao.",
+    fields: ["healthConditions"]
+  });
+
+  if (values.healthConditions?.includes("Outro")) {
+    questions.push({ key: "healthConditionOther", title: "Qual outra condicao de saude?", fields: ["healthConditionOther"] });
+  }
+
+  questions.push(
+    { key: "motivation", title: "De 1 a 10, qual sua motivacao hoje?", fields: ["motivation"] },
+    { key: "weekendDifficulty", title: "Final de semana costuma atrapalhar sua rotina?", fields: ["weekendDifficulty"] }
+  );
+
+  if (values.weekendDifficulty === "sim") {
+    questions.push({ key: "weekendDifficultyReason", title: "Por que o final de semana atrapalha?", fields: ["weekendDifficultyReason"] });
+  }
+
+  questions.push(
+    { key: "sweetsDifficulty", title: "Doces sao uma dificuldade para voce?", fields: ["sweetsDifficulty"] },
+    { key: "nightHunger", title: "Voce sente fome ou vontade de comer a noite?", fields: ["nightHunger"] },
+    { key: "weightKg", title: measurementQuestions.weightKg.title, helper: measurementQuestions.weightKg.helper, fields: ["weightKg"], measurement: true },
+    { key: "neckCm", title: measurementQuestions.neckCm.title, helper: measurementQuestions.neckCm.helper, fields: ["neckCm"], measurement: true },
+    { key: "armCm", title: measurementQuestions.armCm.title, helper: measurementQuestions.armCm.helper, fields: ["armCm"], measurement: true },
+    { key: "waistCm", title: measurementQuestions.waistCm.title, helper: measurementQuestions.waistCm.helper, fields: ["waistCm"], measurement: true },
+    { key: "abdomenCm", title: measurementQuestions.abdomenCm.title, helper: measurementQuestions.abdomenCm.helper, fields: ["abdomenCm"], measurement: true },
+    { key: "thighCm", title: measurementQuestions.thighCm.title, helper: measurementQuestions.thighCm.helper, fields: ["thighCm"], measurement: true },
+    { key: "calfCm", title: measurementQuestions.calfCm.title, helper: measurementQuestions.calfCm.helper, fields: ["calfCm"], measurement: true }
   );
 
   return questions;
@@ -489,202 +536,143 @@ function buildQuestions(activityLevel: AnamneseFormData["activityLevel"]): Quest
 
 function QuestionField({
   questionKey,
-  register
+  register,
+  values
 }: {
   questionKey: QuestionKey;
   register: ReturnType<typeof useForm<AnamneseFormData>>["register"];
-  values: AnamneseFormData;
+  values: Partial<AnamneseFormData>;
 }) {
   switch (questionKey) {
-    case "fullName":
-      return <Input autoFocus placeholder="Nome completo" {...register("fullName")} />;
-    case "age":
-      return <Input autoFocus placeholder="Idade" type="number" {...register("age")} />;
-    case "weightKg":
-      return (
-        <Input
-          autoFocus
-          placeholder="Peso atual (kg)"
-          step="0.1"
-          type="number"
-          {...register("weightKg")}
-        />
-      );
+    case "birthDate":
+      return <Input autoFocus type="date" {...register("birthDate")} />;
     case "heightCm":
-      return (
-        <Input
-          autoFocus
-          placeholder="Altura em centimetros"
-          type="number"
-          {...register("heightCm")}
-        />
-      );
+      return <Input autoFocus inputMode="numeric" min={130} max={230} placeholder="Exemplo: 170" type="number" {...register("heightCm")} />;
     case "biologicalSex":
       return (
         <OptionGrid>
           <RadioOption label="Mulher" value="mulher" {...register("biologicalSex")} />
           <RadioOption label="Homem" value="homem" {...register("biologicalSex")} />
-          <RadioOption
-            label="Prefiro revisar com a equipe"
-            value="indefinido"
-            {...register("biologicalSex")}
-          />
+          <RadioOption label="Prefiro revisar com a equipe" value="indefinido" {...register("biologicalSex")} />
         </OptionGrid>
       );
     case "mainGoals":
-      return (
-        <OptionGrid>
-          {goalOptions.map((option) => (
-            <CheckboxOption
-              key={option}
-              label={option}
-              value={option}
-              {...register("mainGoals")}
-            />
-          ))}
-        </OptionGrid>
-      );
+      return <CheckboxList options={goalOptions} register={register("mainGoals")} />;
     case "mainDifficulties":
-      return (
-        <OptionGrid>
-          {difficultyOptions.map((option) => (
-            <CheckboxOption
-              key={option}
-              label={option}
-              value={option}
-              {...register("mainDifficulties")}
-            />
-          ))}
-        </OptionGrid>
-      );
+      return <CheckboxList options={difficultyOptions} register={register("mainDifficulties")} />;
     case "weightLossHistory":
-      return (
-        <textarea
-          autoFocus
-          className="min-h-36 w-full rounded-lg border border-coal/15 bg-white px-3 py-3 text-sm outline-none focus:border-coal focus:ring-2 focus:ring-coal/10"
-          placeholder="Conte rapidamente seu historico de emagrecimento."
-          {...register("weightLossHistory")}
-        />
-      );
+      return <textarea autoFocus className="min-h-36 w-full rounded-lg border border-coal/15 bg-white px-3 py-3 text-sm outline-none focus:border-coal focus:ring-2 focus:ring-coal/10" placeholder="Conte com suas palavras..." {...register("weightLossHistory")} />;
     case "activityLevel":
       return (
         <OptionGrid>
-          <RadioOption
-            label="Nao pratico atividade fisica"
-            value="sedentario"
-            {...register("activityLevel")}
-          />
+          <RadioOption label="Nao pratico atividade fisica" value="sedentario" {...register("activityLevel")} />
           <RadioOption label="1 a 2x por semana" value="baixo" {...register("activityLevel")} />
-          <RadioOption
-            label="3 a 4x por semana"
-            value="moderado"
-            {...register("activityLevel")}
-          />
+          <RadioOption label="3 a 4x por semana" value="moderado" {...register("activityLevel")} />
           <RadioOption label="5x ou mais por semana" value="alto" {...register("activityLevel")} />
-          <RadioOption
-            label="Atividade intensa/frequente"
-            value="muito_alto"
-            {...register("activityLevel")}
-          />
         </OptionGrid>
       );
     case "activityDescription":
-      return (
-        <Input
-          autoFocus
-          placeholder="Exemplo: musculacao, caminhada, corrida, funcional..."
-          {...register("activityDescription")}
-        />
-      );
+      return <Input autoFocus placeholder="Exemplo: musculacao, caminhada, corrida..." {...register("activityDescription")} />;
     case "sleepHours":
       return (
         <OptionGrid>
-          <RadioOption
-            label="5 horas ou menos por noite"
-            value="5 horas ou menos por noite"
-            {...register("sleepHours")}
-          />
-          <RadioOption
-            label="6 horas por noite"
-            value="6 horas por noite"
-            {...register("sleepHours")}
-          />
-          <RadioOption
-            label="7 horas por noite"
-            value="7 horas por noite"
-            {...register("sleepHours")}
-          />
-          <RadioOption
-            label="8 horas ou mais por noite"
-            value="8 horas ou mais por noite"
-            {...register("sleepHours")}
-          />
+          <RadioOption label="5 horas ou menos por noite" value="5 horas ou menos por noite" {...register("sleepHours")} />
+          <RadioOption label="6 horas por noite" value="6 horas por noite" {...register("sleepHours")} />
+          <RadioOption label="7 horas por noite" value="7 horas por noite" {...register("sleepHours")} />
+          <RadioOption label="8 horas ou mais por noite" value="8 horas ou mais por noite" {...register("sleepHours")} />
         </OptionGrid>
       );
     case "sleepQuality":
       return (
         <OptionGrid>
-          <RadioOption
-            label="Bom: nao levanta/desperta durante a noite"
-            value="bom"
-            {...register("sleepQuality")}
-          />
-          <RadioOption
-            label="Regular: eventualmente desperta, mas volta a dormir normalmente"
-            value="regular"
-            {...register("sleepQuality")}
-          />
-          <RadioOption
-            label="Ruim: acorda sem motivo aparente ou tem dificuldade para adormecer"
-            value="ruim"
-            {...register("sleepQuality")}
-          />
+          <RadioOption label="Bom: nao levanta/desperta durante a noite" value="bom" {...register("sleepQuality")} />
+          <RadioOption label="Regular: eventualmente desperta, mas volta a dormir normalmente" value="regular" {...register("sleepQuality")} />
+          <RadioOption label="Ruim: acorda sem motivo aparente ou tem dificuldade para adormecer" value="ruim" {...register("sleepQuality")} />
         </OptionGrid>
       );
-    case "foodPreference":
-      return (
-        <OptionGrid>
-          <RadioOption label="Onivoro" value="onivoro" {...register("foodPreference")} />
-          <RadioOption label="Vegetariano" value="vegetariano" {...register("foodPreference")} />
-          <RadioOption label="Vegano" value="vegano" {...register("foodPreference")} />
-          <RadioOption
-            label="Tenho restricoes alimentares"
-            value="restricoes"
-            {...register("foodPreference")}
-          />
-        </OptionGrid>
-      );
+    case "foodPreferences":
+      return <CheckboxList options={dietOptions} register={register("foodPreferences")} />;
+    case "dislikedFoods":
+      return <Input autoFocus placeholder="Exemplo: peixe, leite, ovo..." {...register("dislikedFoods")} />;
+    case "foodAllergies":
+      return <CheckboxList options={allergyOptions} register={register("foodAllergies")} />;
+    case "foodAllergyOther":
+      return <Input autoFocus placeholder="Qual alergia?" {...register("foodAllergyOther")} />;
     case "healthConditions":
       return (
         <OptionGrid>
           {healthOptions.map((option) => (
-            <CheckboxOption
-              key={option}
-              label={option}
-              value={option}
-              {...register("healthConditions")}
-            />
+            <CheckboxOption key={option.label} label={option.label} helper={option.helper} value={option.label} {...register("healthConditions")} />
           ))}
         </OptionGrid>
       );
+    case "healthConditionOther":
+      return <Input autoFocus placeholder="Qual condicao?" {...register("healthConditionOther")} />;
     case "motivation":
       return (
-        <Input
-          autoFocus
-          max={10}
-          min={0}
-          placeholder="Motivacao de 0 a 10"
-          type="number"
-          {...register("motivation")}
-        />
+        <div className="grid grid-cols-5 gap-2 md:grid-cols-10">
+          {Array.from({ length: 10 }, (_, index) => index + 1).map((value) => (
+            <label key={value} className={`flex h-12 cursor-pointer items-center justify-center rounded-lg border text-sm font-bold transition ${Number(values.motivation) === value ? "border-coal bg-coal text-white" : "border-coal/12 bg-white text-coal hover:border-coal/30"}`}>
+              <input className="sr-only" type="radio" value={value} {...register("motivation")} />
+              {value}
+            </label>
+          ))}
+        </div>
       );
     case "weekendDifficulty":
-      return <BooleanQuestion label="Sim, final de semana costuma atrapalhar" register={register("weekendDifficulty")} />;
+      return <YesNoOptions register={register("weekendDifficulty")} />;
+    case "weekendDifficultyReason":
+      return <Input autoFocus placeholder="Conte brevemente o principal motivo" {...register("weekendDifficultyReason")} />;
     case "sweetsDifficulty":
-      return <BooleanQuestion label="Sim, doces sao uma dificuldade importante" register={register("sweetsDifficulty")} />;
+      return <YesNoUnknownOptions register={register("sweetsDifficulty")} />;
     case "nightHunger":
-      return <BooleanQuestion label="Sim, sinto fome ou vontade de comer a noite" register={register("nightHunger")} />;
+      return <YesNoUnknownOptions register={register("nightHunger")} />;
+    case "weightKg":
+      return <Input autoFocus step="0.1" type="number" placeholder="Peso em kg" {...register("weightKg")} />;
+    case "neckCm":
+    case "armCm":
+    case "waistCm":
+    case "abdomenCm":
+    case "thighCm":
+    case "calfCm":
+      return <Input autoFocus step="0.1" type="number" placeholder="Medida em cm" {...register(questionKey)} />;
   }
+}
+
+function MeasurementFrame({
+  children,
+  helper
+}: {
+  children: React.ReactNode;
+  helper?: string;
+}) {
+  return (
+    <div className="grid gap-4 md:grid-cols-[220px_1fr]">
+      <div className="flex min-h-44 items-center justify-center rounded-lg border border-dashed border-coal/20 bg-linen px-4 text-center text-sm text-graphite">
+        Foto de referencia da medida
+      </div>
+      <div>
+        {helper ? <p className="mb-4 text-sm leading-6 text-graphite">{helper}</p> : null}
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function CheckboxList({
+  options,
+  register
+}: {
+  options: string[];
+  register: React.InputHTMLAttributes<HTMLInputElement>;
+}) {
+  return (
+    <OptionGrid>
+      {options.map((option) => (
+        <CheckboxOption key={option} label={option} value={option} {...register} />
+      ))}
+    </OptionGrid>
+  );
 }
 
 function OptionGrid({ children }: { children: React.ReactNode }) {
@@ -704,33 +692,45 @@ function RadioOption({
 }
 
 function CheckboxOption({
+  helper,
   label,
   ...props
-}: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) {
+}: React.InputHTMLAttributes<HTMLInputElement> & { helper?: string; label: string }) {
   return (
-    <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-coal/12 bg-white px-4 py-3 text-sm transition hover:border-coal/30">
-      <input className="h-4 w-4" type="checkbox" {...props} />
-      {label}
+    <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-coal/12 bg-white px-4 py-3 text-sm transition hover:border-coal/30">
+      <input className="mt-0.5 h-4 w-4" type="checkbox" {...props} />
+      <span>
+        <span className="block">{label}</span>
+        {helper ? <span className="mt-1 block text-xs text-graphite/70">{helper}</span> : null}
+      </span>
     </label>
   );
 }
 
-function BooleanQuestion({
-  label,
+function YesNoOptions({
   register
 }: {
-  label: string;
-  register: ReturnType<typeof useForm<AnamneseFormData>>["register"] extends (
-    name: infer _Name
-  ) => infer Return
-    ? Return
-    : never;
+  register: React.InputHTMLAttributes<HTMLInputElement>;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-coal/12 bg-white px-4 py-3 text-sm transition hover:border-coal/30">
-      <input className="h-4 w-4" type="checkbox" {...register} />
-      {label}
-    </label>
+    <OptionGrid>
+      <RadioOption label="Sim" value="sim" {...register} />
+      <RadioOption label="Nao" value="nao" {...register} />
+    </OptionGrid>
+  );
+}
+
+function YesNoUnknownOptions({
+  register
+}: {
+  register: React.InputHTMLAttributes<HTMLInputElement>;
+}) {
+  return (
+    <OptionGrid>
+      <RadioOption label="Sim" value="sim" {...register} />
+      <RadioOption label="Nao" value="nao" {...register} />
+      <RadioOption label="Nao sei" value="nao_sei" {...register} />
+    </OptionGrid>
   );
 }
 
