@@ -18,6 +18,7 @@ export type Database = {
         | "plano_liberado"
         | "revisao_necessaria";
       review_status: "sem_revisao" | "revisao_recomendada" | "revisao_necessaria";
+      plan_curation_status: "pendente" | "aprovado" | "revisar";
       user_role: "participant" | "admin";
     };
     Tables: {
@@ -196,6 +197,44 @@ export type Database = {
             foreignKeyName: "physical_assessments_user_id_fkey";
             columns: ["user_id"];
             isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      plan_curations: {
+        Row: {
+          id: string;
+          user_id: string;
+          calculation_id: string | null;
+          suggested_plan_code: string | null;
+          approved_plan_code: string | null;
+          status: Database["public"]["Enums"]["plan_curation_status"];
+          admin_observation: string | null;
+          reviewed_by: string | null;
+          reviewed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          calculation_id?: string | null;
+          suggested_plan_code?: string | null;
+          approved_plan_code?: string | null;
+          status?: Database["public"]["Enums"]["plan_curation_status"];
+          admin_observation?: string | null;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["plan_curations"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "plan_curations_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
           }

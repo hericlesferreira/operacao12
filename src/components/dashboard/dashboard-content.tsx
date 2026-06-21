@@ -19,6 +19,10 @@ type DashboardState = {
     totalEnergyExpenditure: number | null;
     reviewReasons: string[];
   } | null;
+  curation: {
+    status: string;
+    approvedPlanCode: string | null;
+  } | null;
 };
 
 export function DashboardContent() {
@@ -26,7 +30,8 @@ export function DashboardContent() {
     loading: true,
     fullName: null,
     hasAnamnese: false,
-    calculation: null
+    calculation: null,
+    curation: null
   });
 
   useEffect(() => {
@@ -52,7 +57,7 @@ export function DashboardContent() {
         return;
       }
 
-      const [{ data: profile }, { data: anamnese }, { data: calculation }] =
+      const [{ data: profile }, { data: anamnese }, { data: calculation }, { data: curation }] =
         await Promise.all([
           supabase
             .from("profiles")
@@ -74,6 +79,11 @@ export function DashboardContent() {
             .eq("user_id", user.id)
             .order("created_at", { ascending: false })
             .limit(1)
+            .maybeSingle(),
+          supabase
+            .from("plan_curations")
+            .select("status, approved_plan_code")
+            .eq("user_id", user.id)
             .maybeSingle()
         ]);
 
@@ -88,6 +98,12 @@ export function DashboardContent() {
               totalEnergyExpenditure: calculation.total_energy_expenditure,
               reviewReasons: calculation.review_reasons
             }
+          : null,
+        curation: curation
+          ? {
+              status: curation.status,
+              approvedPlanCode: curation.approved_plan_code
+            }
           : null
       });
     }
@@ -95,11 +111,12 @@ export function DashboardContent() {
     void loadDashboard();
   }, []);
 
+  const selectedPlanCode =
+    state.curation?.approvedPlanCode ?? state.calculation?.indicatedPlanCode;
   const plan =
-    state.calculation?.indicatedPlanCode &&
-    state.calculation.indicatedPlanCode in operation12sMealPlans
+    selectedPlanCode && selectedPlanCode in operation12sMealPlans
       ? operation12sMealPlans[
-          state.calculation.indicatedPlanCode as keyof typeof operation12sMealPlans
+          selectedPlanCode as keyof typeof operation12sMealPlans
         ]
       : null;
 
@@ -114,7 +131,10 @@ export function DashboardContent() {
     },
     {
       label: "Plano indicado",
-      value: plan ? `${plan.title} (${plan.calories} kcal)` : "Aguardando curadoria",
+      value:
+        state.curation?.status === "aprovado" && plan
+          ? `${plan.title} (${plan.calories} kcal)`
+          : "Em análise",
       icon: Target
     }
   ];
@@ -135,7 +155,7 @@ export function DashboardContent() {
           </h2>
           <p className="mt-3 max-w-2xl leading-7 text-graphite">
             {state.hasAnamnese
-              ? "Sua anamnese foi registrada. A plataforma ja calculou seu ponto de partida e indicou o plano alimentar inicial."
+              ? "Sua anamnese foi registrada. A equipe vai revisar a curadoria antes da entrega final do plano."
               : "O proximo passo e concluir a anamnese para gerar calculos, plano indicado e trilha da operacao."}
           </p>
           <Link href="/onboarding/anamnese">

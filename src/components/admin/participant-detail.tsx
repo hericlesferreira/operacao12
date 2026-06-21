@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { PlanCurationForm } from "@/components/admin/plan-curation-form";
 import { operation12sMealPlans } from "@/lib/calculations/metabolic";
 import { supabase } from "@/lib/supabase/client";
 import type { Database, Json } from "@/types/database";
@@ -13,6 +14,7 @@ type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 type Anamnese = Database["public"]["Tables"]["anamneses"]["Row"];
 type Calculation = Database["public"]["Tables"]["metabolic_calculations"]["Row"];
 type Assessment = Database["public"]["Tables"]["physical_assessments"]["Row"];
+type PlanCuration = Database["public"]["Tables"]["plan_curations"]["Row"];
 
 type ParticipantDetailState = {
   loading: boolean;
@@ -21,6 +23,7 @@ type ParticipantDetailState = {
   anamnese: Anamnese | null;
   calculation: Calculation | null;
   assessment: Assessment | null;
+  planCuration: PlanCuration | null;
 };
 
 export function ParticipantDetail({ participantId }: { participantId: string }) {
@@ -30,7 +33,8 @@ export function ParticipantDetail({ participantId }: { participantId: string }) 
     profile: null,
     anamnese: null,
     calculation: null,
-    assessment: null
+    assessment: null,
+    planCuration: null
   });
 
   useEffect(() => {
@@ -44,7 +48,7 @@ export function ParticipantDetail({ participantId }: { participantId: string }) 
         return;
       }
 
-      const [{ data: profile, error: profileError }, { data: anamneses }, { data: calculations }, { data: assessments }] =
+      const [{ data: profile, error: profileError }, { data: anamneses }, { data: calculations }, { data: assessments }, { data: planCuration }] =
         await Promise.all([
           supabase
             .from("profiles")
@@ -68,6 +72,11 @@ export function ParticipantDetail({ participantId }: { participantId: string }) 
             .select("*")
             .eq("user_id", participantId)
             .eq("week", 0)
+            .maybeSingle(),
+          supabase
+            .from("plan_curations")
+            .select("*")
+            .eq("user_id", participantId)
             .maybeSingle()
         ]);
 
@@ -78,7 +87,8 @@ export function ParticipantDetail({ participantId }: { participantId: string }) 
           profile: null,
           anamnese: null,
           calculation: null,
-          assessment: null
+          assessment: null,
+          planCuration: null
         });
         return;
       }
@@ -89,7 +99,8 @@ export function ParticipantDetail({ participantId }: { participantId: string }) 
         profile,
         anamnese: anamneses?.[0] ?? null,
         calculation: calculations?.[0] ?? null,
-        assessment: assessments ?? null
+        assessment: assessments ?? null,
+        planCuration: planCuration ?? null
       });
     }
 
@@ -202,6 +213,41 @@ export function ParticipantDetail({ participantId }: { participantId: string }) 
               )}
             </Card>
           </div>
+
+          <Card className="bg-white text-coal">
+            <h3 className="text-xl font-bold">Curadoria do plano alimentar</h3>
+            <p className="mt-2 text-sm text-graphite">
+              A sugestão automática pode ser aprovada ou ajustada antes de virar
+              entrega final para o participante.
+            </p>
+            <div className="mt-4 grid gap-3 text-sm text-graphite md:grid-cols-3">
+              <Info label="Plano sugerido" value={plan?.title ?? "-"} />
+              <Info
+                label="Status atual"
+                value={state.planCuration?.status ?? "pendente"}
+              />
+              <Info
+                label="Plano aprovado"
+                value={
+                  state.planCuration?.approved_plan_code &&
+                  state.planCuration.approved_plan_code in operation12sMealPlans
+                    ? operation12sMealPlans[
+                        state.planCuration
+                          .approved_plan_code as keyof typeof operation12sMealPlans
+                      ].title
+                    : "-"
+                }
+              />
+            </div>
+            <PlanCurationForm
+              calculationId={state.calculation?.id ?? null}
+              initialApprovedPlanCode={state.planCuration?.approved_plan_code}
+              initialObservation={state.planCuration?.admin_observation}
+              initialStatus={state.planCuration?.status}
+              suggestedPlanCode={state.calculation?.indicated_plan_code ?? null}
+              userId={participantId}
+            />
+          </Card>
 
           <Card className="bg-white text-coal">
             <h3 className="text-xl font-bold">Anamnese</h3>
