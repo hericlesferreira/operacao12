@@ -124,7 +124,7 @@ export function AuthCard({ mode, signupAccessCode }: AuthCardProps) {
         <p className="mt-3 text-sm leading-6 text-graphite">
           {isSignup
             ? "Crie o acesso do participante e envie as credenciais pelo WhatsApp."
-            : "Acesse sua trilha, plano alimentar, aulas e proximos passos da operacao."}
+            : "Acesse sua trilha, plano alimentar indicado e proximos passos da operacao."}
         </p>
       </div>
 

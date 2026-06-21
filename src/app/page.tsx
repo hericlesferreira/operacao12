@@ -6,9 +6,9 @@ import { Card } from "@/components/ui/card";
 const inclusions = [
   "Trilha personalizada gerada pela anamnese",
   "Plano alimentar indicado ao perfil",
-  "Aulas semanais para orientar a evolucao",
-  "Avaliacoes fisicas programadas",
-  "Bonus liberados conforme necessidades"
+  "Curadoria do ponto de partida",
+  "Prioridades praticas para as 12 semanas",
+  "Avaliacoes fisicas programadas"
 ];
 
 export default function HomePage() {
@@ -28,13 +28,12 @@ export default function HomePage() {
           </p>
           <p className="mt-4 max-w-2xl leading-7 text-graphite">
             Receba uma trilha personalizada, um plano alimentar direcionado ao
-            seu perfil e aulas semanais para construir um resultado que voce
-            consiga manter.
+            seu perfil e uma direcao clara para executar as proximas 12 semanas.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/auth/cadastro">
+            <Link href="/auth/login">
               <Button>
-                Comecar minha operacao
+                Acessar minha operacao
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>

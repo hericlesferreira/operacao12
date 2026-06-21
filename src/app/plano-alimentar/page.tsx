@@ -8,9 +8,8 @@ export default function MealPlanPage() {
       <Card className="max-w-3xl">
         <h2 className="text-2xl font-bold">Plano indicado</h2>
         <p className="mt-3 leading-7 text-graphite">
-          O plano alimentar sera selecionado automaticamente depois dos calculos
-          metabolicos e da comparacao com os planos ativos cadastrados pelo
-          admin.
+          O plano alimentar sera indicado depois da anamnese, dos calculos
+          metabolicos e da curadoria conforme o perfil do participante.
         </p>
         <Button className="mt-6" disabled>
           Baixar PDF do plano

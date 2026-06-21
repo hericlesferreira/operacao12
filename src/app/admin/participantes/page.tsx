@@ -10,7 +10,8 @@ export default function AdminParticipantsPage() {
           <div>
             <h2 className="text-xl font-bold">Listagem de participantes</h2>
             <p className="mt-1 text-sm text-graphite">
-              Filtros e dados reais entram depois da conexao com Supabase.
+              Filtros, anamnese, calculos, plano indicado e trilha entram na
+              proxima etapa.
             </p>
           </div>
           <Input className="md:max-w-xs" placeholder="Buscar por nome ou e-mail" />

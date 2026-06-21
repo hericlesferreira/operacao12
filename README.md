@@ -1,6 +1,6 @@
 # Operacao 12S
 
-Plataforma web para a Operacao 12S, um programa digital de emagrecimento guiado por 12 semanas com acesso por 1 ano.
+Plataforma web para a Operacao 12S, um entregavel digital de curadoria para indicar o plano alimentar, gerar a trilha da operacao e organizar o ponto de partida do participante.
 
 ## Stack
 
@@ -38,6 +38,14 @@ supabase/migrations/20260621114500_initial_schema.sql
 ```
 
 Para aplicar manualmente no painel do Supabase, rode o arquivo pelo SQL Editor.
+
+## Fluxo atual do produto
+
+- O participante nao se cadastra sozinho.
+- A equipe cria o acesso em um link interno protegido por `SIGNUP_ACCESS_CODE`.
+- O participante recebe e-mail e senha pelo WhatsApp.
+- Ao entrar, ele acessa anamnese, plano indicado, trilha da operacao e avaliacoes.
+- A plataforma nao entrega aulas nem area de membros.
 
 ## Scripts
 

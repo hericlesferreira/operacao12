@@ -25,7 +25,7 @@ export default function AdminPage() {
         <p className="mt-2 max-w-3xl leading-7 text-graphite">
           Este painel ja separa a area administrativa da experiencia do
           participante. As proximas tarefas conectam autentificacao, roles,
-          tabelas do Supabase e listagem de participantes.
+          tabelas do Supabase, curadoria de planos e geracao da trilha.
         </p>
       </Card>
     </AdminShell>

@@ -1,4 +1,4 @@
-import { CalendarDays, FileDown, Flame, PlayCircle } from "lucide-react";
+import { CalendarDays, FileDown, Flame, Target } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 const cards = [
   { label: "Semana atual", value: "1", icon: CalendarDays },
   { label: "Meta calorica", value: "Aguardando anamnese", icon: Flame },
-  { label: "Proxima aula", value: "Liberada apos a trilha", icon: PlayCircle }
+  { label: "Prioridades", value: "Geradas na trilha", icon: Target }
 ];
 
 export default function DashboardPage() {
@@ -20,8 +20,8 @@ export default function DashboardPage() {
           <h2 className="mt-2 text-3xl font-bold">Bem-vindo a sua operacao.</h2>
           <p className="mt-3 max-w-2xl leading-7 text-graphite">
             A plataforma vai organizar sua anamnese, calculos, plano indicado,
-            aulas, bonus e avaliacoes. O proximo passo e concluir a anamnese
-            para gerar uma direcao mais clara.
+            trilha da operacao e avaliacoes. O proximo passo e concluir a
+            anamnese para gerar uma direcao mais clara.
           </p>
           <Button className="mt-6" variant="secondary">
             Responder anamnese

@@ -30,3 +30,7 @@ where email = 'seu-email@exemplo.com';
 ## Observacao de seguranca
 
 Participantes acessam apenas os proprios dados. Admins acessam todos os dados pelo helper `public.is_admin()`.
+
+## Escopo atual
+
+O fluxo atual da Operacao 12S nao usa aulas, modulos ou bonus. Algumas tabelas foram criadas na migration inicial por causa do backlog antigo, mas nao fazem parte da experiencia atual do participante.
