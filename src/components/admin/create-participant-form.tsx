@@ -21,6 +21,7 @@ export function CreateParticipantForm({ onCreated }: CreateParticipantFormProps)
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
     setError(null);
     setSuccess(null);
     setIsSubmitting(true);
@@ -40,7 +41,6 @@ export function CreateParticipantForm({ onCreated }: CreateParticipantFormProps)
         return;
       }
 
-      const form = event.currentTarget;
       const formData = new FormData(form);
       const controller = new AbortController();
       const timeoutId = window.setTimeout(() => controller.abort(), 20000);
