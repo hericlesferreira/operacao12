@@ -26,6 +26,7 @@ Crie `.env.local` com as variaveis do Supabase:
 NEXT_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=sua-chave-anon-public
 SUPABASE_SECRET_KEY=sua-chave-secret-apenas-server-side
+SIGNUP_ACCESS_CODE=um-codigo-privado-para-o-link-de-cadastro
 ```
 
 ## Banco de dados

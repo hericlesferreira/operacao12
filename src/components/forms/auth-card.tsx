@@ -10,9 +10,10 @@ import { supabase } from "@/lib/supabase/client";
 
 type AuthCardProps = {
   mode: "login" | "signup";
+  signupAccessCode?: string;
 };
 
-export function AuthCard({ mode }: AuthCardProps) {
+export function AuthCard({ mode, signupAccessCode }: AuthCardProps) {
   const isSignup = mode === "signup";
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -24,12 +25,8 @@ export function AuthCard({ mode }: AuthCardProps) {
     setError(null);
     setSuccess(null);
 
-    if (!supabase) {
-      setError("Supabase nao esta configurado neste ambiente.");
-      return;
-    }
-
     const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
     const email = String(formData.get("email") ?? "").trim();
     const password = String(formData.get("password") ?? "");
 
@@ -50,44 +47,37 @@ export function AuthCard({ mode }: AuthCardProps) {
         return;
       }
 
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/confirmado`,
-          data: {
-            full_name: fullName,
-            whatsapp
-          }
-        }
+      const response = await fetch("/api/admin/create-participant", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-signup-access-code": signupAccessCode ?? ""
+        },
+        body: JSON.stringify({
+          fullName,
+          whatsapp,
+          email,
+          password
+        })
       });
 
-      if (signUpError) {
-        setError(translateAuthError(signUpError.message));
+      const result = (await response.json()) as { error?: string; message?: string };
+
+      if (!response.ok) {
+        setError(translateAuthError(result.error ?? "Nao foi possivel criar o usuario."));
         setIsSubmitting(false);
         return;
       }
 
-      if (data.user) {
-        await supabase.from("profiles").upsert({
-          id: data.user.id,
-          full_name: fullName,
-          email,
-          whatsapp: whatsapp || null,
-          role: "participant"
-        });
-      }
+      setSuccess(result.message ?? "Participante cadastrado com sucesso.");
+      form.reset();
+      setIsSubmitting(false);
+      return;
+    }
 
-      if (!data.session) {
-        setSuccess(
-          "Cadastro criado. Enviamos um e-mail de confirmacao; abra o link antes de fazer login."
-        );
-        setIsSubmitting(false);
-        return;
-      }
-
-      router.push("/dashboard");
-      router.refresh();
+    if (!supabase) {
+      setError("Supabase nao esta configurado neste ambiente.");
+      setIsSubmitting(false);
       return;
     }
 
@@ -129,11 +119,11 @@ export function AuthCard({ mode }: AuthCardProps) {
           Operacao 12S
         </p>
         <h1 className="mt-2 text-3xl font-bold text-coal">
-          {isSignup ? "Criar conta" : "Entrar na plataforma"}
+          {isSignup ? "Cadastrar participante" : "Entrar na plataforma"}
         </h1>
         <p className="mt-3 text-sm leading-6 text-graphite">
           {isSignup
-            ? "Comece pela anamnese inicial para receber uma direcao adequada ao seu perfil."
+            ? "Crie o acesso do participante e envie as credenciais pelo WhatsApp."
             : "Acesse sua trilha, plano alimentar, aulas e proximos passos da operacao."}
         </p>
       </div>
@@ -170,20 +160,23 @@ export function AuthCard({ mode }: AuthCardProps) {
           {isSubmitting
             ? "Processando..."
             : isSignup
-              ? "Criar minha conta"
+              ? "Cadastrar participante"
               : "Entrar"}
         </Button>
       </form>
 
-      <p className="mt-5 text-center text-sm text-graphite">
-        {isSignup ? "Ja tem conta?" : "Ainda nao tem conta?"}{" "}
-        <Link
-          className="font-semibold text-command hover:underline"
-          href={isSignup ? "/auth/login" : "/auth/cadastro"}
-        >
-          {isSignup ? "Entrar" : "Criar cadastro"}
-        </Link>
-      </p>
+      {isSignup ? (
+        <p className="mt-5 text-center text-sm text-graphite">
+          Ja tem conta?{" "}
+          <Link className="font-semibold text-command hover:underline" href="/auth/login">
+            Entrar
+          </Link>
+        </p>
+      ) : (
+        <p className="mt-5 text-center text-sm text-graphite">
+          Seu acesso e criado pela equipe e enviado pelo WhatsApp.
+        </p>
+      )}
     </Card>
   );
 }
