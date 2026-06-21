@@ -9,6 +9,11 @@ type CreateParticipantFormProps = {
   onCreated?: () => void;
 };
 
+type ApiResult = {
+  error?: string;
+  message?: string;
+};
+
 export function CreateParticipantForm({ onCreated }: CreateParticipantFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -20,50 +25,63 @@ export function CreateParticipantForm({ onCreated }: CreateParticipantFormProps)
     setSuccess(null);
     setIsSubmitting(true);
 
-    if (!supabase) {
-      setError("Supabase não está configurado.");
+    try {
+      if (!supabase) {
+        setError("Supabase não está configurado.");
+        return;
+      }
+
+      const {
+        data: { session }
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        setError("Sua sessão expirou. Faça login novamente.");
+        return;
+      }
+
+      const form = event.currentTarget;
+      const formData = new FormData(form);
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), 20000);
+
+      const response = await fetch("/api/admin/participants", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json"
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
+          fullName: String(formData.get("fullName") ?? ""),
+          whatsapp: String(formData.get("whatsapp") ?? ""),
+          email: String(formData.get("email") ?? ""),
+          password: String(formData.get("password") ?? "")
+        })
+      });
+
+      window.clearTimeout(timeoutId);
+      const result = await readApiResponse(response);
+
+      if (!response.ok) {
+        setError(result.error ?? "Não foi possível cadastrar o participante.");
+        return;
+      }
+
+      form.reset();
+      setSuccess(result.message ?? "Participante cadastrado.");
+      onCreated?.();
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof DOMException && caughtError.name === "AbortError"
+          ? "O cadastro demorou demais para responder. Verifique as variáveis da Vercel e tente novamente."
+          : caughtError instanceof Error
+            ? caughtError.message
+            : "Não foi possível cadastrar o participante."
+      );
+    } finally {
       setIsSubmitting(false);
-      return;
     }
-
-    const {
-      data: { session }
-    } = await supabase.auth.getSession();
-
-    if (!session) {
-      setError("Sua sessão expirou. Faça login novamente.");
-      setIsSubmitting(false);
-      return;
-    }
-
-    const form = event.currentTarget;
-    const formData = new FormData(form);
-    const response = await fetch("/api/admin/participants", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        fullName: String(formData.get("fullName") ?? ""),
-        whatsapp: String(formData.get("whatsapp") ?? ""),
-        email: String(formData.get("email") ?? ""),
-        password: String(formData.get("password") ?? "")
-      })
-    });
-
-    const result = (await response.json()) as { error?: string; message?: string };
-
-    if (!response.ok) {
-      setError(result.error ?? "Não foi possível cadastrar o participante.");
-      setIsSubmitting(false);
-      return;
-    }
-
-    form.reset();
-    setSuccess(result.message ?? "Participante cadastrado.");
-    setIsSubmitting(false);
-    onCreated?.();
   }
 
   return (
@@ -95,4 +113,18 @@ export function CreateParticipantForm({ onCreated }: CreateParticipantFormProps)
       ) : null}
     </form>
   );
+}
+
+async function readApiResponse(response: Response): Promise<ApiResult> {
+  const text = await response.text();
+
+  if (!text) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(text) as ApiResult;
+  } catch {
+    return { error: text };
+  }
 }
