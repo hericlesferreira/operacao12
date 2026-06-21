@@ -17,10 +17,31 @@ import { anamneseSchema, type AnamneseFormData } from "@/schemas/anamnese";
 
 const steps = [
   "Dados basicos",
-  "Objetivo",
-  "Rotina",
-  "Saude e comportamento"
+  "Objetivos e dores",
+  "Atividade e sono",
+  "Avaliacao alimentar e saude"
 ] as const;
+
+const goalOptions = [
+  "Emagrecer",
+  "Reduzir gordura abdominal",
+  "Melhorar saude",
+  "Ter mais energia",
+  "Sair do efeito sanfona",
+  "Criar rotina alimentar",
+  "Melhorar relacao com a comida"
+];
+
+const difficultyOptions = [
+  "Ansiedade",
+  "Doces",
+  "Beliscos",
+  "Fome a noite",
+  "Final de semana",
+  "Falta de rotina",
+  "Comer fora",
+  "Comeco bem e depois abandono"
+];
 
 const healthOptions = [
   "Nenhuma",
@@ -51,6 +72,8 @@ export function AnamneseForm() {
       biologicalSex: "mulher",
       activityLevel: "sedentario",
       foodPreference: "onivoro",
+      mainGoals: [],
+      mainDifficulties: [],
       healthConditions: ["Nenhuma"],
       motivation: 7,
       weekendDifficulty: false,
@@ -117,9 +140,9 @@ export function AnamneseForm() {
         biological_sex: data.biologicalSex,
         weight_kg: data.weightKg,
         height_cm: data.heightCm,
-        main_goal: data.mainGoal,
+        main_goal: data.mainGoals.join(", "),
         weight_loss_history: data.weightLossHistory || null,
-        main_difficulty: data.mainDifficulty || null,
+        main_difficulty: data.mainDifficulties.join(", "),
         activity_level: data.activityLevel,
         sleep_hours: data.sleepHours || null,
         sleep_quality: data.sleepQuality || null,
@@ -129,7 +152,8 @@ export function AnamneseForm() {
         behavioral_answers: {
           weekendDifficulty: data.weekendDifficulty,
           sweetsDifficulty: data.sweetsDifficulty,
-          nightHunger: data.nightHunger
+          nightHunger: data.nightHunger,
+          activityDescription: data.activityDescription || null
         },
         raw_answers: data,
         completed_at: new Date().toISOString()
@@ -191,7 +215,6 @@ export function AnamneseForm() {
               />
               <Input
                 placeholder="Altura (cm)"
-                step="0.1"
                 type="number"
                 {...register("heightCm")}
               />
@@ -207,20 +230,47 @@ export function AnamneseForm() {
           ) : null}
 
           {step === 1 ? (
-            <div className="grid gap-4">
-              <textarea
-                className="min-h-28 rounded-lg border border-coal/15 bg-white px-3 py-3 text-sm"
-                placeholder="Qual seu objetivo principal com a Operacao 12S?"
-                {...register("mainGoal")}
-              />
+            <div className="space-y-5">
+              <div>
+                <p className="text-sm font-semibold text-coal">
+                  Objetivos principais
+                </p>
+                <div className="mt-3 grid gap-2 md:grid-cols-2">
+                  {goalOptions.map((option) => (
+                    <label className="flex items-center gap-2 text-sm" key={option}>
+                      <input
+                        className="h-4 w-4"
+                        type="checkbox"
+                        value={option}
+                        {...register("mainGoals")}
+                      />
+                      {option}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-coal">
+                  Principais dores
+                </p>
+                <div className="mt-3 grid gap-2 md:grid-cols-2">
+                  {difficultyOptions.map((option) => (
+                    <label className="flex items-center gap-2 text-sm" key={option}>
+                      <input
+                        className="h-4 w-4"
+                        type="checkbox"
+                        value={option}
+                        {...register("mainDifficulties")}
+                      />
+                      {option}
+                    </label>
+                  ))}
+                </div>
+              </div>
               <textarea
                 className="min-h-24 rounded-lg border border-coal/15 bg-white px-3 py-3 text-sm"
                 placeholder="Conte rapidamente seu historico de emagrecimento."
                 {...register("weightLossHistory")}
-              />
-              <Input
-                placeholder="Principal dificuldade hoje"
-                {...register("mainDifficulty")}
               />
             </div>
           ) : null}
@@ -237,30 +287,60 @@ export function AnamneseForm() {
                 <option value="alto">5x ou mais por semana</option>
                 <option value="muito_alto">Atividade intensa/frequente</option>
               </select>
+              {watch("activityLevel") !== "sedentario" ? (
+                <Input
+                  placeholder="Qual atividade fisica realiza?"
+                  {...register("activityDescription")}
+                />
+              ) : null}
               <select
                 className="h-11 rounded-lg border border-coal/15 bg-white px-3 text-sm"
-                {...register("foodPreference")}
+                {...register("sleepHours")}
               >
-                <option value="onivoro">Onivoro</option>
-                <option value="vegetariano">Vegetariano</option>
-                <option value="vegano">Vegano</option>
-                <option value="restricoes">Tenho restricoes alimentares</option>
+                <option value="">Horas de sono</option>
+                <option value="5 horas ou menos por noite">
+                  5 horas ou menos por noite
+                </option>
+                <option value="6 horas por noite">6 horas por noite</option>
+                <option value="7 horas por noite">7 horas por noite</option>
+                <option value="8 horas ou mais por noite">
+                  8 horas ou mais por noite
+                </option>
               </select>
-              <Input placeholder="Horas de sono por noite" {...register("sleepHours")} />
               <select
                 className="h-11 rounded-lg border border-coal/15 bg-white px-3 text-sm"
                 {...register("sleepQuality")}
               >
                 <option value="">Qualidade do sono</option>
-                <option value="boa">Boa</option>
-                <option value="regular">Regular</option>
-                <option value="ruim">Ruim</option>
+                <option value="bom">
+                  Bom: nao levanta/desperta durante a noite
+                </option>
+                <option value="regular">
+                  Regular: eventualmente desperta, mas volta a dormir normalmente
+                </option>
+                <option value="ruim">
+                  Ruim: acorda sem motivo aparente ou tem dificuldade para adormecer
+                </option>
               </select>
             </div>
           ) : null}
 
           {step === 3 ? (
             <div className="space-y-5">
+              <div>
+                <p className="text-sm font-semibold text-coal">
+                  Tipo de dieta usual
+                </p>
+                <select
+                  className="mt-3 h-11 w-full rounded-lg border border-coal/15 bg-white px-3 text-sm"
+                  {...register("foodPreference")}
+                >
+                  <option value="onivoro">Onivoro</option>
+                  <option value="vegetariano">Vegetariano</option>
+                  <option value="vegano">Vegano</option>
+                  <option value="restricoes">Tenho restricoes alimentares</option>
+                </select>
+              </div>
               <div>
                 <p className="text-sm font-semibold text-coal">Condicoes de saude</p>
                 <div className="mt-3 grid gap-2 md:grid-cols-2">
