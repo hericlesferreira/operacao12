@@ -54,6 +54,7 @@ export function AuthCard({ mode }: AuthCardProps) {
         email,
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/auth/confirmado`,
           data: {
             full_name: fullName,
             whatsapp
@@ -78,7 +79,9 @@ export function AuthCard({ mode }: AuthCardProps) {
       }
 
       if (!data.session) {
-        setSuccess("Cadastro criado. Confirme seu e-mail antes de fazer login.");
+        setSuccess(
+          "Cadastro criado. Enviamos um e-mail de confirmacao; abra o link antes de fazer login."
+        );
         setIsSubmitting(false);
         return;
       }
