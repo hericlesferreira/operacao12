@@ -240,6 +240,56 @@ export type Database = {
           }
         ];
       };
+      operation_trails: {
+        Row: {
+          id: string;
+          user_id: string;
+          anamnese_id: string;
+          calculation_id: string | null;
+          pdf_url: string | null;
+          priorities: Json;
+          recommended_materials: Json;
+          generated_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          anamnese_id: string;
+          calculation_id?: string | null;
+          pdf_url?: string | null;
+          priorities?: Json;
+          recommended_materials?: Json;
+          generated_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["operation_trails"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "operation_trails_anamnese_id_fkey";
+            columns: ["anamnese_id"];
+            isOneToOne: false;
+            referencedRelation: "anamneses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "operation_trails_calculation_id_fkey";
+            columns: ["calculation_id"];
+            isOneToOne: false;
+            referencedRelation: "metabolic_calculations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "operation_trails_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

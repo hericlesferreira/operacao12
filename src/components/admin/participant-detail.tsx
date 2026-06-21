@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { GenerateTrailButton } from "@/components/admin/generate-trail-button";
 import { PlanCurationForm } from "@/components/admin/plan-curation-form";
 import { operation12sMealPlans } from "@/lib/calculations/metabolic";
 import { supabase } from "@/lib/supabase/client";
@@ -15,6 +16,7 @@ type Anamnese = Database["public"]["Tables"]["anamneses"]["Row"];
 type Calculation = Database["public"]["Tables"]["metabolic_calculations"]["Row"];
 type Assessment = Database["public"]["Tables"]["physical_assessments"]["Row"];
 type PlanCuration = Database["public"]["Tables"]["plan_curations"]["Row"];
+type OperationTrail = Database["public"]["Tables"]["operation_trails"]["Row"];
 
 type ParticipantDetailState = {
   loading: boolean;
@@ -24,6 +26,7 @@ type ParticipantDetailState = {
   calculation: Calculation | null;
   assessment: Assessment | null;
   planCuration: PlanCuration | null;
+  trail: Pick<OperationTrail, "id" | "generated_at" | "created_at"> | null;
 };
 
 export function ParticipantDetail({ participantId }: { participantId: string }) {
@@ -34,7 +37,8 @@ export function ParticipantDetail({ participantId }: { participantId: string }) 
     anamnese: null,
     calculation: null,
     assessment: null,
-    planCuration: null
+    planCuration: null,
+    trail: null
   });
 
   useEffect(() => {
@@ -48,7 +52,7 @@ export function ParticipantDetail({ participantId }: { participantId: string }) 
         return;
       }
 
-      const [{ data: profile, error: profileError }, { data: anamneses }, { data: calculations }, { data: assessments }, { data: planCuration }] =
+      const [{ data: profile, error: profileError }, { data: anamneses }, { data: calculations }, { data: assessments }, { data: planCuration }, { data: trails }] =
         await Promise.all([
           supabase
             .from("profiles")
@@ -77,7 +81,13 @@ export function ParticipantDetail({ participantId }: { participantId: string }) 
             .from("plan_curations")
             .select("*")
             .eq("user_id", participantId)
-            .maybeSingle()
+            .maybeSingle(),
+          supabase
+            .from("operation_trails")
+            .select("id, generated_at, created_at")
+            .eq("user_id", participantId)
+            .order("created_at", { ascending: false })
+            .limit(1)
         ]);
 
       if (profileError || !profile) {
@@ -88,7 +98,8 @@ export function ParticipantDetail({ participantId }: { participantId: string }) 
           anamnese: null,
           calculation: null,
           assessment: null,
-          planCuration: null
+          planCuration: null,
+          trail: null
         });
         return;
       }
@@ -100,7 +111,8 @@ export function ParticipantDetail({ participantId }: { participantId: string }) 
         anamnese: anamneses?.[0] ?? null,
         calculation: calculations?.[0] ?? null,
         assessment: assessments ?? null,
-        planCuration: planCuration ?? null
+        planCuration: planCuration ?? null,
+        trail: trails?.[0] ?? null
       });
     }
 
@@ -247,6 +259,36 @@ export function ParticipantDetail({ participantId }: { participantId: string }) 
               suggestedPlanCode={state.calculation?.indicated_plan_code ?? null}
               userId={participantId}
             />
+          </Card>
+
+          <Card className="bg-white text-coal">
+            <h3 className="text-xl font-bold">Trilha da Operação</h3>
+            <p className="mt-2 text-sm text-graphite">
+              Gere a página de entrega com ponto de partida, estratégia alimentar,
+              prioridades e medidas iniciais do participante.
+            </p>
+            <div className="mt-4 grid gap-3 text-sm text-graphite md:grid-cols-2">
+              <Info
+                label="Status"
+                value={state.trail ? "Trilha gerada" : "Ainda não gerada"}
+              />
+              <Info
+                label="Última geração"
+                value={
+                  state.trail
+                    ? formatDateTime(state.trail.generated_at ?? state.trail.created_at)
+                    : "-"
+                }
+              />
+            </div>
+            <div className="mt-5">
+              <GenerateTrailButton disabled={!state.anamnese} userId={participantId} />
+              {!state.anamnese ? (
+                <p className="mt-3 text-sm text-graphite">
+                  A trilha só pode ser gerada depois que a anamnese for respondida.
+                </p>
+              ) : null}
+            </div>
           </Card>
 
           <Card className="bg-white text-coal">
@@ -407,6 +449,13 @@ function formatDate(value: string) {
   }
 
   return `${day}/${month}/${year}`;
+}
+
+function formatDateTime(value: string) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short"
+  }).format(new Date(value));
 }
 
 function formatMeasure(value: number | null, suffix: string) {

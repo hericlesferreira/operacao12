@@ -23,6 +23,7 @@ type DashboardState = {
     status: string;
     approvedPlanCode: string | null;
   } | null;
+  hasTrail: boolean;
 };
 
 export function DashboardContent() {
@@ -31,7 +32,8 @@ export function DashboardContent() {
     fullName: null,
     hasAnamnese: false,
     calculation: null,
-    curation: null
+    curation: null,
+    hasTrail: false
   });
 
   useEffect(() => {
@@ -57,35 +59,43 @@ export function DashboardContent() {
         return;
       }
 
-      const [{ data: profile }, { data: anamnese }, { data: calculation }, { data: curation }] =
-        await Promise.all([
-          supabase
-            .from("profiles")
-            .select("full_name")
-            .eq("id", user.id)
-            .maybeSingle(),
-          supabase
-            .from("anamneses")
-            .select("id")
-            .eq("user_id", user.id)
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle(),
-          supabase
-            .from("metabolic_calculations")
-            .select(
-              "cut_target_calories, indicated_plan_code, total_energy_expenditure, review_reasons"
-            )
-            .eq("user_id", user.id)
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle(),
-          supabase
-            .from("plan_curations")
-            .select("status, approved_plan_code")
-            .eq("user_id", user.id)
-            .maybeSingle()
-        ]);
+      const [
+        { data: profile },
+        { data: anamnese },
+        { data: calculation },
+        { data: curation },
+        { data: trail }
+      ] = await Promise.all([
+        supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
+        supabase
+          .from("anamneses")
+          .select("id")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("metabolic_calculations")
+          .select(
+            "cut_target_calories, indicated_plan_code, total_energy_expenditure, review_reasons"
+          )
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("plan_curations")
+          .select("status, approved_plan_code")
+          .eq("user_id", user.id)
+          .maybeSingle(),
+        supabase
+          .from("operation_trails")
+          .select("id")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      ]);
 
       setState({
         loading: false,
@@ -104,7 +114,8 @@ export function DashboardContent() {
               status: curation.status,
               approvedPlanCode: curation.approved_plan_code
             }
-          : null
+          : null,
+        hasTrail: Boolean(trail)
       });
     }
 
@@ -123,7 +134,7 @@ export function DashboardContent() {
   const cards = [
     { label: "Semana atual", value: "1", icon: CalendarDays },
     {
-      label: "Meta calorica",
+      label: "Meta calórica",
       value: state.calculation?.cutTargetCalories
         ? `${state.calculation.cutTargetCalories} kcal`
         : "Aguardando anamnese",
@@ -148,15 +159,15 @@ export function DashboardContent() {
           </p>
           <h2 className="mt-2 text-3xl font-bold">
             {state.loading
-              ? "Carregando sua operacao..."
+              ? "Carregando sua operação..."
               : state.fullName
                 ? `Bem-vindo, ${state.fullName}.`
-                : "Bem-vindo a sua operacao."}
+                : "Bem-vindo à sua operação."}
           </h2>
           <p className="mt-3 max-w-2xl leading-7 text-graphite">
             {state.hasAnamnese
               ? "Sua anamnese foi registrada. A equipe vai revisar a curadoria antes da entrega final do plano."
-              : "O proximo passo e concluir a anamnese para gerar calculos, plano indicado e trilha da operacao."}
+              : "O próximo passo é concluir a anamnese para gerar cálculos, plano indicado e trilha da operação."}
           </p>
           <Link href="/onboarding/anamnese">
             <Button className="mt-6" variant="secondary">
@@ -167,15 +178,23 @@ export function DashboardContent() {
 
         <Card>
           <FileDown className="h-8 w-8 text-cocoa" />
-          <h2 className="mt-4 text-xl font-bold">Trilha da Operacao</h2>
+          <h2 className="mt-4 text-xl font-bold">Trilha da Operação</h2>
           <p className="mt-2 text-sm leading-6 text-graphite">
-            {state.hasAnamnese
-              ? "A proxima etapa e gerar o PDF com ponto de partida, estrategia alimentar e prioridades."
-              : "A trilha em PDF sera liberada depois da anamnese e dos calculos."}
+            {state.hasTrail
+              ? "Sua trilha inicial já está disponível com ponto de partida, estratégia alimentar e prioridades."
+              : state.hasAnamnese
+                ? "A próxima etapa é a equipe liberar sua trilha com ponto de partida, estratégia alimentar e prioridades."
+                : "A trilha será liberada depois da anamnese e dos cálculos."}
           </p>
-          <Button className="mt-5 w-full" disabled>
-            Baixar trilha
-          </Button>
+          {state.hasTrail ? (
+            <Link href="/trilha">
+              <Button className="mt-5 w-full">Ver trilha</Button>
+            </Link>
+          ) : (
+            <Button className="mt-5 w-full" disabled>
+              Trilha em preparo
+            </Button>
+          )}
         </Card>
       </div>
 
@@ -191,9 +210,9 @@ export function DashboardContent() {
 
       {state.calculation?.reviewReasons.length ? (
         <Card className="mt-5 border-cocoa/40 bg-linen">
-          <h2 className="text-xl font-bold">Revisao recomendada</h2>
+          <h2 className="text-xl font-bold">Revisão recomendada</h2>
           <p className="mt-2 text-sm leading-6 text-graphite">
-            Este caso pede olhar profissional antes de tratar a indicacao como
+            Este caso pede olhar profissional antes de tratar a indicação como
             definitiva.
           </p>
           <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-graphite">
