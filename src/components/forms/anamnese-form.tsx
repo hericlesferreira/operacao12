@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -55,6 +55,8 @@ const healthOptions = [
   "Transtorno alimentar relatado"
 ];
 
+const draftStorageKey = "operacao12s:anamnese-draft";
+
 export function AnamneseForm() {
   const router = useRouter();
   const [step, setStep] = useState(0);
@@ -65,9 +67,11 @@ export function AnamneseForm() {
     formState: { errors },
     handleSubmit,
     register,
+    reset,
     watch
   } = useForm<AnamneseFormData>({
     resolver: zodResolver(anamneseSchema),
+    shouldUnregister: false,
     defaultValues: {
       biologicalSex: "mulher",
       activityLevel: "sedentario",
@@ -82,8 +86,33 @@ export function AnamneseForm() {
     }
   });
 
+  const watchedValues = watch();
+  const activityLevel = watchedValues.activityLevel;
+
+  useEffect(() => {
+    const savedDraft = window.localStorage.getItem(draftStorageKey);
+
+    if (!savedDraft) {
+      return;
+    }
+
+    try {
+      reset(JSON.parse(savedDraft) as Partial<AnamneseFormData>);
+    } catch {
+      window.localStorage.removeItem(draftStorageKey);
+    }
+  }, [reset]);
+
+  useEffect(() => {
+    const subscription = watch((values) => {
+      window.localStorage.setItem(draftStorageKey, JSON.stringify(values));
+    });
+
+    return () => subscription.unsubscribe();
+  }, [watch]);
+
   const preview = useMemo(() => {
-    const values = watch();
+    const values = watchedValues;
     const hasEnoughData =
       values.biologicalSex &&
       values.activityLevel &&
@@ -102,96 +131,109 @@ export function AnamneseForm() {
       weightKg: Number(values.weightKg),
       heightCm: Number(values.heightCm)
     });
-  }, [watch]);
+  }, [watchedValues]);
 
   async function onSubmit(data: AnamneseFormData) {
     setFormError(null);
     setIsSubmitting(true);
 
-    if (!supabase) {
-      setFormError("Supabase nao esta configurado.");
-      setIsSubmitting(false);
-      return;
-    }
+    try {
+      if (!supabase) {
+        setFormError("Supabase nao esta configurado.");
+        setIsSubmitting(false);
+        return;
+      }
 
-    const {
-      data: { user }
-    } = await supabase.auth.getUser();
+      const {
+        data: { user }
+      } = await supabase.auth.getUser();
 
-    if (!user) {
-      router.push("/auth/login");
-      return;
-    }
+      if (!user) {
+        setFormError(
+          "Sua sessao expirou. Faca login novamente para finalizar a anamnese."
+        );
+        setIsSubmitting(false);
+        return;
+      }
 
-    const metabolic = calculateOperation12sMetabolism({
-      biologicalSex: data.biologicalSex,
-      activityLevel: data.activityLevel,
-      age: data.age,
-      weightKg: data.weightKg,
-      heightCm: data.heightCm
-    });
-
-    const { data: anamnese, error: anamneseError } = await supabase
-      .from("anamneses")
-      .insert({
-        user_id: user.id,
-        full_name: data.fullName,
+      const metabolic = calculateOperation12sMetabolism({
+        biologicalSex: data.biologicalSex,
+        activityLevel: data.activityLevel,
         age: data.age,
-        biological_sex: data.biologicalSex,
-        weight_kg: data.weightKg,
-        height_cm: data.heightCm,
-        main_goal: data.mainGoals.join(", "),
-        weight_loss_history: data.weightLossHistory || null,
-        main_difficulty: data.mainDifficulties.join(", "),
-        activity_level: data.activityLevel,
-        sleep_hours: data.sleepHours || null,
-        sleep_quality: data.sleepQuality || null,
-        health_conditions: data.healthConditions,
-        food_preference: data.foodPreference,
-        motivation: data.motivation,
-        behavioral_answers: {
-          weekendDifficulty: data.weekendDifficulty,
-          sweetsDifficulty: data.sweetsDifficulty,
-          nightHunger: data.nightHunger,
-          activityDescription: data.activityDescription || null
-        },
-        raw_answers: data,
-        completed_at: new Date().toISOString()
-      })
-      .select("id")
-      .single();
-
-    if (anamneseError || !anamnese) {
-      setFormError(anamneseError?.message ?? "Nao foi possivel salvar a anamnese.");
-      setIsSubmitting(false);
-      return;
-    }
-
-    const { error: calculationError } = await supabase
-      .from("metabolic_calculations")
-      .insert({
-        user_id: user.id,
-        anamnese_id: anamnese.id,
-        basal_metabolic_rate: metabolic.basalMetabolicRate,
-        total_energy_expenditure: metabolic.totalEnergyExpenditure,
-        activity_factor: metabolic.activityFactor,
-        cut_target_calories: metabolic.cutTargetCalories,
-        indicated_plan_code: metabolic.indicatedPlan?.code ?? null,
-        estimated_deficit: metabolic.estimatedDeficit,
-        review_status: metabolic.reviewRecommended
-          ? "revisao_recomendada"
-          : "sem_revisao",
-        review_reasons: metabolic.reviewReasons
+        weightKg: data.weightKg,
+        heightCm: data.heightCm
       });
 
-    if (calculationError) {
-      setFormError(calculationError.message);
-      setIsSubmitting(false);
-      return;
-    }
+      const { data: anamnese, error: anamneseError } = await supabase
+        .from("anamneses")
+        .insert({
+          user_id: user.id,
+          full_name: data.fullName,
+          age: data.age,
+          biological_sex: data.biologicalSex,
+          weight_kg: data.weightKg,
+          height_cm: data.heightCm,
+          main_goal: data.mainGoals.join(", "),
+          weight_loss_history: data.weightLossHistory || null,
+          main_difficulty: data.mainDifficulties.join(", "),
+          activity_level: data.activityLevel,
+          sleep_hours: data.sleepHours || null,
+          sleep_quality: data.sleepQuality || null,
+          health_conditions: data.healthConditions,
+          food_preference: data.foodPreference,
+          motivation: data.motivation,
+          behavioral_answers: {
+            weekendDifficulty: data.weekendDifficulty,
+            sweetsDifficulty: data.sweetsDifficulty,
+            nightHunger: data.nightHunger,
+            activityDescription: data.activityDescription || null
+          },
+          raw_answers: data,
+          completed_at: new Date().toISOString()
+        })
+        .select("id")
+        .single();
 
-    router.push("/dashboard");
-    router.refresh();
+      if (anamneseError || !anamnese) {
+        setFormError(anamneseError?.message ?? "Nao foi possivel salvar a anamnese.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const { error: calculationError } = await supabase
+        .from("metabolic_calculations")
+        .insert({
+          user_id: user.id,
+          anamnese_id: anamnese.id,
+          basal_metabolic_rate: metabolic.basalMetabolicRate,
+          total_energy_expenditure: metabolic.totalEnergyExpenditure,
+          activity_factor: metabolic.activityFactor,
+          cut_target_calories: metabolic.cutTargetCalories,
+          indicated_plan_code: metabolic.indicatedPlan?.code ?? null,
+          estimated_deficit: metabolic.estimatedDeficit,
+          review_status: metabolic.reviewRecommended
+            ? "revisao_recomendada"
+            : "sem_revisao",
+          review_reasons: metabolic.reviewReasons
+        });
+
+      if (calculationError) {
+        setFormError(calculationError.message);
+        setIsSubmitting(false);
+        return;
+      }
+
+      window.localStorage.removeItem(draftStorageKey);
+      router.push("/dashboard");
+      router.refresh();
+    } catch (error) {
+      setFormError(
+        error instanceof Error
+          ? error.message
+          : "Nao foi possivel finalizar a anamnese."
+      );
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -287,7 +329,7 @@ export function AnamneseForm() {
                 <option value="alto">5x ou mais por semana</option>
                 <option value="muito_alto">Atividade intensa/frequente</option>
               </select>
-              {watch("activityLevel") !== "sedentario" ? (
+              {activityLevel !== "sedentario" ? (
                 <Input
                   placeholder="Qual atividade fisica realiza?"
                   {...register("activityDescription")}
@@ -386,12 +428,26 @@ export function AnamneseForm() {
 
           <div className="flex flex-wrap gap-3">
             {step > 0 ? (
-              <Button onClick={() => setStep((current) => current - 1)} variant="ghost">
+              <Button
+                onClick={(event) => {
+                  event.preventDefault();
+                  setStep((current) => current - 1);
+                }}
+                type="button"
+                variant="ghost"
+              >
                 Voltar
               </Button>
             ) : null}
             {step < steps.length - 1 ? (
-              <Button onClick={() => setStep((current) => current + 1)} variant="secondary">
+              <Button
+                onClick={(event) => {
+                  event.preventDefault();
+                  setStep((current) => current + 1);
+                }}
+                type="button"
+                variant="secondary"
+              >
                 Continuar
               </Button>
             ) : (
