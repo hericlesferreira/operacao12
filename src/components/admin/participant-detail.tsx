@@ -250,6 +250,18 @@ export function ParticipantDetail({ participantId }: { participantId: string }) 
                     : "-"
                 }
               />
+              <Info
+                label="PDF do plano"
+                value={
+                  state.planCuration?.approved_plan_code &&
+                  state.planCuration.approved_plan_code in operation12sMealPlans
+                    ? operation12sMealPlans[
+                        state.planCuration
+                          .approved_plan_code as keyof typeof operation12sMealPlans
+                      ].pdfUrl
+                    : plan?.pdfUrl ?? "-"
+                }
+              />
             </div>
             <PlanCurationForm
               calculationId={state.calculation?.id ?? null}

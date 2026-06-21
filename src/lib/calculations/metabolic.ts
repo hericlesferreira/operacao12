@@ -26,6 +26,7 @@ export type MetabolicResult = {
     code: MealPlanCode;
     title: string;
     calories: number;
+    pdfUrl: string;
   } | null;
   estimatedDeficit: number | null;
   reviewRecommended: boolean;
@@ -42,12 +43,12 @@ export const activityFactors: Record<ActivityLevel, number> = {
 
 export const operation12sMealPlans: Record<
   MealPlanCode,
-  { code: MealPlanCode; title: string; calories: number }
+  { code: MealPlanCode; title: string; calories: number; pdfUrl: string }
 > = {
-  A: { code: "A", title: "Plano alimentar A", calories: 2000 },
-  B: { code: "B", title: "Plano alimentar B", calories: 1800 },
-  C: { code: "C", title: "Plano alimentar C", calories: 1600 },
-  D: { code: "D", title: "Plano alimentar D", calories: 1400 }
+  A: { code: "A", title: "Plano alimentar A", calories: 2000, pdfUrl: "/plans/plano-a.pdf" },
+  B: { code: "B", title: "Plano alimentar B", calories: 1800, pdfUrl: "/plans/plano-b.pdf" },
+  C: { code: "C", title: "Plano alimentar C", calories: 1600, pdfUrl: "/plans/plano-c.pdf" },
+  D: { code: "D", title: "Plano alimentar D", calories: 1400, pdfUrl: "/plans/plano-d.pdf" }
 };
 
 export function calculateBasalMetabolicRate(input: MetabolicInput) {
