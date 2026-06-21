@@ -51,6 +51,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;
+        Relationships: [];
       };
       anamneses: {
         Row: {
@@ -85,7 +86,19 @@ export type Database = {
           updated_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["anamneses"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "anamneses_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
       };
     };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
 };
