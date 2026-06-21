@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { getPostLoginRedirectPath } from "@/lib/auth/redirect";
 import { supabase } from "@/lib/supabase/client";
 
 type AuthCardProps = {
@@ -97,13 +98,7 @@ export function AuthCard({ mode, signupAccessCode }: AuthCardProps) {
     } = await supabase.auth.getUser();
 
     if (user) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      router.push(profile?.role === "admin" ? "/admin" : "/dashboard");
+      router.push(await getPostLoginRedirectPath(user.id));
       router.refresh();
       return;
     }

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { CalendarDays, FileDown, Flame, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { getPostLoginRedirectPath } from "@/lib/auth/redirect";
 import { operation12sMealPlans } from "@/lib/calculations/metabolic";
 import { supabase } from "@/lib/supabase/client";
 
@@ -40,7 +41,14 @@ export function DashboardContent() {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        window.location.href = "/auth/login";
+        window.location.replace("/auth/login");
+        return;
+      }
+
+      const redirectPath = await getPostLoginRedirectPath(user.id);
+
+      if (redirectPath === "/admin") {
+        window.location.replace("/admin");
         return;
       }
 
