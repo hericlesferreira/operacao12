@@ -96,6 +96,61 @@ export type Database = {
           }
         ];
       };
+      metabolic_calculations: {
+        Row: {
+          id: string;
+          user_id: string;
+          anamnese_id: string;
+          basal_metabolic_rate: number | null;
+          total_energy_expenditure: number | null;
+          activity_factor: number;
+          cut_target_calories: number | null;
+          indicated_plan_id: string | null;
+          indicated_plan_code: string | null;
+          estimated_deficit: number | null;
+          equation_name: string;
+          review_status: Database["public"]["Enums"]["review_status"];
+          review_reasons: string[];
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          anamnese_id: string;
+          basal_metabolic_rate?: number | null;
+          total_energy_expenditure?: number | null;
+          activity_factor: number;
+          cut_target_calories?: number | null;
+          indicated_plan_id?: string | null;
+          indicated_plan_code?: string | null;
+          estimated_deficit?: number | null;
+          equation_name?: string;
+          review_status?: Database["public"]["Enums"]["review_status"];
+          review_reasons?: string[];
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["metabolic_calculations"]["Insert"]
+        >;
+        Relationships: [
+          {
+            foreignKeyName: "metabolic_calculations_anamnese_id_fkey";
+            columns: ["anamnese_id"];
+            isOneToOne: false;
+            referencedRelation: "anamneses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "metabolic_calculations_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
