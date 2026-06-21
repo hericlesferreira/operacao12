@@ -1,0 +1,53 @@
+import Link from "next/link";
+import { LogOut } from "lucide-react";
+import { participantNavigation } from "@/constants/navigation";
+import { Button } from "@/components/ui/button";
+
+type AppShellProps = {
+  children: React.ReactNode;
+  title: string;
+  eyebrow?: string;
+};
+
+export function AppShell({ children, title, eyebrow = "Operacao 12S" }: AppShellProps) {
+  return (
+    <div className="min-h-screen bg-paper">
+      <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-coal/10 bg-coal px-4 py-6 text-white lg:block">
+        <Link className="block rounded-lg px-3 py-2" href="/dashboard">
+          <span className="text-xs uppercase tracking-[0.2em] text-lime">Operacao</span>
+          <strong className="mt-1 block text-2xl">12S</strong>
+        </Link>
+        <nav className="mt-8 space-y-1">
+          {participantNavigation.map((item) => (
+            <Link
+              className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm text-white/78 transition hover:bg-white/10 hover:text-white"
+              href={item.href}
+              key={item.href}
+            >
+              <item.icon className="h-4 w-4" />
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+      </aside>
+
+      <div className="lg:pl-64">
+        <header className="sticky top-0 z-10 border-b border-coal/10 bg-paper/90 px-4 py-4 backdrop-blur md:px-8">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-graphite/60">
+                {eyebrow}
+              </p>
+              <h1 className="mt-1 text-2xl font-bold text-coal">{title}</h1>
+            </div>
+            <Button className="hidden sm:inline-flex" variant="ghost">
+              <LogOut className="mr-2 h-4 w-4" />
+              Sair
+            </Button>
+          </div>
+        </header>
+        <main className="px-4 py-6 md:px-8">{children}</main>
+      </div>
+    </div>
+  );
+}
