@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, Search } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { CreateParticipantForm } from "@/components/admin/create-participant-form";
 import { operation12sMealPlans } from "@/lib/calculations/metabolic";
 import { supabase } from "@/lib/supabase/client";
 
@@ -26,7 +27,10 @@ export function ParticipantsList() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function loadParticipants() {
+    void loadParticipants();
+  }, []);
+
+  async function loadParticipants() {
       if (!supabase) {
         setError("Supabase não está configurado.");
         setLoading(false);
@@ -91,9 +95,6 @@ export function ParticipantsList() {
       setLoading(false);
     }
 
-    void loadParticipants();
-  }, []);
-
   const filteredParticipants = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
@@ -110,45 +111,56 @@ export function ParticipantsList() {
   }, [participants, query]);
 
   return (
-    <Card className="bg-white text-coal">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="text-xl font-bold">Listagem de participantes</h2>
-          <p className="mt-1 text-sm text-graphite">
-            Veja anamnese, cálculo, plano indicado e avaliação física inicial.
-          </p>
+    <div className="grid gap-5">
+      <Card className="bg-white text-coal">
+        <h2 className="text-xl font-bold">Cadastrar participante</h2>
+        <p className="mt-1 text-sm text-graphite">
+          Crie o acesso e envie e-mail/senha inicial pelo WhatsApp.
+        </p>
+        <div className="mt-5">
+          <CreateParticipantForm onCreated={loadParticipants} />
         </div>
-        <div className="relative md:min-w-80">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-graphite/60" />
-          <Input
-            className="pl-9"
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Buscar por nome, e-mail ou WhatsApp"
-            value={query}
-          />
-        </div>
-      </div>
+      </Card>
 
-      {loading ? (
-        <div className="mt-6 rounded-lg border border-coal/10 p-8 text-center text-sm text-graphite">
-          Carregando participantes...
+      <Card className="bg-white text-coal">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-xl font-bold">Listagem de participantes</h2>
+            <p className="mt-1 text-sm text-graphite">
+              Veja anamnese, cálculo, plano indicado e avaliação física inicial.
+            </p>
+          </div>
+          <div className="relative md:min-w-80">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-graphite/60" />
+            <Input
+              className="pl-9"
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Buscar por nome, e-mail ou WhatsApp"
+              value={query}
+            />
+          </div>
         </div>
-      ) : null}
 
-      {error ? (
-        <div className="mt-6 rounded-lg bg-red-50 p-4 text-sm text-red-700">
-          {error}
-        </div>
-      ) : null}
+        {loading ? (
+          <div className="mt-6 rounded-lg border border-coal/10 p-8 text-center text-sm text-graphite">
+            Carregando participantes...
+          </div>
+        ) : null}
 
-      {!loading && !error && filteredParticipants.length === 0 ? (
-        <div className="mt-6 rounded-lg border border-coal/10 p-8 text-center text-sm text-graphite">
-          Nenhum participante encontrado.
-        </div>
-      ) : null}
+        {error ? (
+          <div className="mt-6 rounded-lg bg-red-50 p-4 text-sm text-red-700">
+            {error}
+          </div>
+        ) : null}
 
-      {!loading && !error && filteredParticipants.length > 0 ? (
-        <div className="mt-6 overflow-hidden rounded-lg border border-coal/10">
+        {!loading && !error && filteredParticipants.length === 0 ? (
+          <div className="mt-6 rounded-lg border border-coal/10 p-8 text-center text-sm text-graphite">
+            Nenhum participante encontrado.
+          </div>
+        ) : null}
+
+        {!loading && !error && filteredParticipants.length > 0 ? (
+          <div className="mt-6 overflow-hidden rounded-lg border border-coal/10">
           <div className="hidden grid-cols-[1.3fr_1fr_0.8fr_0.8fr_48px] gap-3 bg-linen px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-graphite md:grid">
             <span>Participante</span>
             <span>WhatsApp</span>
@@ -188,8 +200,9 @@ export function ParticipantsList() {
               </Link>
             );
           })}
-        </div>
-      ) : null}
-    </Card>
+          </div>
+        ) : null}
+      </Card>
+    </div>
   );
 }
