@@ -400,8 +400,8 @@ export function AnamneseForm() {
 
   return (
     <div className="mx-auto grid max-w-5xl gap-5 lg:grid-cols-[1fr_320px]">
-      <Card className="min-h-[560px]">
-        <div className="mb-8">
+      <Card className="min-h-[calc(100svh-11rem)] sm:min-h-[560px]">
+        <div className="mb-6 sm:mb-8">
           <div className="flex items-center justify-between gap-4">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-cocoa">
               Pergunta {questionIndex + 1} de {questions.length}
@@ -417,11 +417,11 @@ export function AnamneseForm() {
         </div>
 
         <form
-          className="flex min-h-[430px] flex-col justify-between"
+          className="flex min-h-[calc(100svh-18rem)] flex-col justify-between sm:min-h-[430px]"
           onSubmit={handleSubmit(onSubmit)}
         >
           <div>
-            <h2 className="max-w-2xl text-3xl font-bold leading-tight text-coal">
+            <h2 className="max-w-2xl text-2xl font-bold leading-tight text-coal sm:text-3xl">
               {currentQuestion.title}
             </h2>
             {currentQuestion.helper ? (
@@ -429,7 +429,7 @@ export function AnamneseForm() {
                 {currentQuestion.helper}
               </p>
             ) : null}
-            <div className="mt-8">
+            <div className="mt-6 sm:mt-8">
               {currentQuestion.measurement ? (
                 <MeasurementFrame helper={currentQuestion.helper}>
                   <QuestionField
@@ -450,9 +450,10 @@ export function AnamneseForm() {
             {formError ? <p className="mt-4 text-sm text-red-700">{formError}</p> : null}
           </div>
 
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="mt-8 grid gap-3 sm:flex sm:flex-wrap">
             {questionIndex > 0 ? (
               <Button
+                className="w-full sm:w-auto"
                 onClick={(event) => {
                   event.preventDefault();
                   setQuestionIndex((current) => Math.max(current - 1, 0));
@@ -465,6 +466,7 @@ export function AnamneseForm() {
             ) : null}
             {questionIndex < questions.length - 1 ? (
               <Button
+                className="w-full sm:w-auto"
                 onClick={(event) => {
                   event.preventDefault();
                   void goNext();
@@ -475,7 +477,7 @@ export function AnamneseForm() {
                 Continuar
               </Button>
             ) : (
-              <Button disabled={isSubmitting} type="submit">
+              <Button className="w-full sm:w-auto" disabled={isSubmitting} type="submit">
                 {isSubmitting ? "Salvando..." : "Finalizar anamnese"}
               </Button>
             )}

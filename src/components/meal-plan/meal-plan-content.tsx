@@ -133,7 +133,7 @@ export function MealPlanContent() {
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-lime">
           {sourceLabel}
         </p>
-        <h2 className="mt-3 text-3xl font-bold">{plan.title}</h2>
+        <h2 className="mt-3 text-2xl font-bold sm:text-3xl">{plan.title}</h2>
         <div className="mt-5 rounded-lg border border-white/15 bg-white/10 px-4 py-3 text-sm font-semibold leading-6 text-white">
           {approvalMessage}
         </div>

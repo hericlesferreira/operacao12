@@ -160,14 +160,14 @@ export function ParticipantsList() {
         ) : null}
 
         {!loading && !error && filteredParticipants.length > 0 ? (
-          <div className="mt-6 overflow-hidden rounded-lg border border-coal/10">
-          <div className="hidden grid-cols-[1.3fr_1fr_0.8fr_0.8fr_48px] gap-3 bg-linen px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-graphite md:grid">
-            <span>Participante</span>
-            <span>WhatsApp</span>
-            <span>Anamnese</span>
-            <span>Plano</span>
-            <span />
-          </div>
+          <div className="mt-6 grid gap-3 md:block md:overflow-hidden md:rounded-lg md:border md:border-coal/10">
+            <div className="hidden grid-cols-[1.3fr_1fr_0.8fr_0.8fr_48px] gap-3 bg-linen px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-graphite md:grid">
+              <span>Participante</span>
+              <span>WhatsApp</span>
+              <span>Anamnese</span>
+              <span>Plano</span>
+              <span />
+            </div>
           {filteredParticipants.map((participant) => {
             const plan =
               participant.planCode &&
@@ -179,7 +179,7 @@ export function ParticipantsList() {
 
             return (
               <Link
-                className="grid gap-2 border-t border-coal/10 px-4 py-4 text-sm transition hover:bg-linen/60 md:grid-cols-[1.3fr_1fr_0.8fr_0.8fr_48px] md:items-center"
+                className="grid gap-3 rounded-lg border border-coal/10 bg-linen/40 px-4 py-4 text-sm transition hover:bg-linen/60 md:rounded-none md:border-0 md:border-t md:bg-transparent md:grid-cols-[1.3fr_1fr_0.8fr_0.8fr_48px] md:items-center"
                 href={`/admin/participantes/${participant.id}`}
                 key={participant.id}
               >
@@ -187,15 +187,30 @@ export function ParticipantsList() {
                   <strong className="block text-coal">{participant.fullName}</strong>
                   <span className="text-graphite">{participant.email}</span>
                 </div>
-                <span className="text-graphite">{participant.whatsapp ?? "-"}</span>
-                <span
-                  className={
-                    participant.hasAnamnese ? "font-semibold text-coal" : "text-graphite"
-                  }
-                >
-                  {participant.hasAnamnese ? "Respondida" : "Pendente"}
-                </span>
-                <span className="text-graphite">{plan?.title ?? "-"}</span>
+                <div>
+                  <span className="block text-xs font-bold uppercase tracking-[0.12em] text-graphite/60 md:hidden">
+                    WhatsApp
+                  </span>
+                  <span className="text-graphite">{participant.whatsapp ?? "-"}</span>
+                </div>
+                <div>
+                  <span className="block text-xs font-bold uppercase tracking-[0.12em] text-graphite/60 md:hidden">
+                    Anamnese
+                  </span>
+                  <span
+                    className={
+                      participant.hasAnamnese ? "font-semibold text-coal" : "text-graphite"
+                    }
+                  >
+                    {participant.hasAnamnese ? "Respondida" : "Pendente"}
+                  </span>
+                </div>
+                <div>
+                  <span className="block text-xs font-bold uppercase tracking-[0.12em] text-graphite/60 md:hidden">
+                    Plano
+                  </span>
+                  <span className="text-graphite">{plan?.title ?? "-"}</span>
+                </div>
                 <ArrowRight className="hidden h-4 w-4 text-graphite md:block" />
               </Link>
             );

@@ -97,7 +97,7 @@ export function CreateParticipantForm({ onCreated }: CreateParticipantFormProps)
         type="text"
       />
       <div className="md:col-span-4">
-        <Button disabled={isSubmitting} type="submit">
+        <Button className="w-full sm:w-auto" disabled={isSubmitting} type="submit">
           {isSubmitting ? "Cadastrando..." : "Cadastrar participante"}
         </Button>
       </div>
