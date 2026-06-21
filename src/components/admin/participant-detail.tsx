@@ -265,9 +265,12 @@ function RawAnswers({ value }: { value: Json }) {
     return null;
   }
 
-  const entries = Object.entries(value).filter(([, entryValue]) =>
-    Boolean(entryValue)
-  );
+  const entries = Object.entries(value)
+    .map(([key, entryValue]) => ({
+      label: complementaryAnswerLabels[key],
+      value: formatComplementaryValue(key, entryValue)
+    }))
+    .filter((entry) => entry.label && entry.value);
 
   if (!entries.length) {
     return null;
@@ -279,10 +282,10 @@ function RawAnswers({ value }: { value: Json }) {
         Respostas complementares
       </span>
       <div className="mt-2 grid gap-2">
-        {entries.map(([key, entryValue]) => (
-          <div className="rounded-lg bg-linen px-3 py-2" key={key}>
-            <span className="font-semibold text-coal">{key}: </span>
-            <span>{formatJsonValue(entryValue)}</span>
+        {entries.map((entry) => (
+          <div className="rounded-lg bg-linen px-3 py-2" key={entry.label}>
+            <span className="font-semibold text-coal">{entry.label}: </span>
+            <span>{entry.value}</span>
           </div>
         ))}
       </div>
@@ -290,16 +293,74 @@ function RawAnswers({ value }: { value: Json }) {
   );
 }
 
-function formatJsonValue(value: Json | undefined) {
+const complementaryAnswerLabels: Record<string, string> = {
+  birthDate: "Data de nascimento",
+  weekendDifficulty: "Final de semana atrapalha",
+  weekendDifficultyReason: "Motivo do final de semana atrapalhar",
+  sweetsDifficulty: "Doces são dificuldade",
+  nightHunger: "Fome ou vontade de comer à noite",
+  activityDescription: "Atividade física realizada",
+  dislikedFoods: "Alimentos que não come ou não gosta",
+  foodAllergies: "Alergias alimentares",
+  foodAllergyOther: "Outra alergia alimentar"
+};
+
+function formatComplementaryValue(key: string, value: Json | undefined) {
+  if (
+    value === null ||
+    value === undefined ||
+    value === "" ||
+    (Array.isArray(value) && value.length === 0)
+  ) {
+    return null;
+  }
+
+  if (key === "birthDate" && typeof value === "string") {
+    return formatDate(value);
+  }
+
+  if (typeof value === "string") {
+    return translateAnswerValue(value);
+  }
+
   if (Array.isArray(value)) {
-    return value.join(", ");
+    return value.map((item) => translateAnswerValue(String(item))).join(", ");
   }
 
   if (typeof value === "object" && value !== null) {
     return JSON.stringify(value);
   }
 
-  return String(value);
+  return translateAnswerValue(String(value));
+}
+
+function translateAnswerValue(value: string) {
+  const translations: Record<string, string> = {
+    sim: "Sim",
+    nao: "Não",
+    nao_sei: "Não sei",
+    bom: "Bom",
+    regular: "Regular",
+    ruim: "Ruim",
+    homem: "Masculino",
+    mulher: "Feminino",
+    sedentario: "Não pratico atividade física",
+    baixo: "1 a 2x por semana",
+    moderado: "3 a 4x por semana",
+    alto: "5x ou mais por semana"
+  };
+
+  return translations[value] ?? value;
+}
+
+function formatDate(value: string) {
+  const [year, month, day] = value.split("-");
+
+  if (!year || !month || !day) {
+    return value;
+  }
+
+  return `${day}/${month}/${year}`;
 }
 
 function formatMeasure(value: number | null, suffix: string) {
