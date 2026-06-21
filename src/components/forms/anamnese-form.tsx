@@ -15,12 +15,7 @@ import {
 import { supabase } from "@/lib/supabase/client";
 import { anamneseSchema, type AnamneseFormData } from "@/schemas/anamnese";
 
-const steps = [
-  "Dados basicos",
-  "Objetivos e dores",
-  "Atividade e sono",
-  "Avaliacao alimentar e saude"
-] as const;
+const draftStorageKey = "operacao12s:anamnese-draft";
 
 const goalOptions = [
   "Emagrecer",
@@ -55,11 +50,36 @@ const healthOptions = [
   "Transtorno alimentar relatado"
 ];
 
-const draftStorageKey = "operacao12s:anamnese-draft";
+type QuestionKey =
+  | "fullName"
+  | "age"
+  | "weightKg"
+  | "heightCm"
+  | "biologicalSex"
+  | "mainGoals"
+  | "mainDifficulties"
+  | "weightLossHistory"
+  | "activityLevel"
+  | "activityDescription"
+  | "sleepHours"
+  | "sleepQuality"
+  | "foodPreference"
+  | "healthConditions"
+  | "motivation"
+  | "weekendDifficulty"
+  | "sweetsDifficulty"
+  | "nightHunger";
+
+type Question = {
+  key: QuestionKey;
+  title: string;
+  helper?: string;
+  fields: Array<keyof AnamneseFormData>;
+};
 
 export function AnamneseForm() {
   const router = useRouter();
-  const [step, setStep] = useState(0);
+  const [questionIndex, setQuestionIndex] = useState(0);
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -68,6 +88,7 @@ export function AnamneseForm() {
     handleSubmit,
     register,
     reset,
+    trigger,
     watch
   } = useForm<AnamneseFormData>({
     resolver: zodResolver(anamneseSchema),
@@ -86,33 +107,14 @@ export function AnamneseForm() {
     }
   });
 
-  const watchedValues = watch();
-  const activityLevel = watchedValues.activityLevel;
-
-  useEffect(() => {
-    const savedDraft = window.localStorage.getItem(draftStorageKey);
-
-    if (!savedDraft) {
-      return;
-    }
-
-    try {
-      reset(JSON.parse(savedDraft) as Partial<AnamneseFormData>);
-    } catch {
-      window.localStorage.removeItem(draftStorageKey);
-    }
-  }, [reset]);
-
-  useEffect(() => {
-    const subscription = watch((values) => {
-      window.localStorage.setItem(draftStorageKey, JSON.stringify(values));
-    });
-
-    return () => subscription.unsubscribe();
-  }, [watch]);
+  const values = watch();
+  const questions = useMemo(() => buildQuestions(values.activityLevel), [
+    values.activityLevel
+  ]);
+  const currentQuestion = questions[questionIndex] ?? questions[0];
+  const progress = Math.round(((questionIndex + 1) / questions.length) * 100);
 
   const preview = useMemo(() => {
-    const values = watchedValues;
     const hasEnoughData =
       values.biologicalSex &&
       values.activityLevel &&
@@ -131,7 +133,46 @@ export function AnamneseForm() {
       weightKg: Number(values.weightKg),
       heightCm: Number(values.heightCm)
     });
-  }, [watchedValues]);
+  }, [values]);
+
+  useEffect(() => {
+    const savedDraft = window.localStorage.getItem(draftStorageKey);
+
+    if (!savedDraft) {
+      return;
+    }
+
+    try {
+      reset(JSON.parse(savedDraft) as Partial<AnamneseFormData>);
+    } catch {
+      window.localStorage.removeItem(draftStorageKey);
+    }
+  }, [reset]);
+
+  useEffect(() => {
+    const subscription = watch((draftValues) => {
+      window.localStorage.setItem(draftStorageKey, JSON.stringify(draftValues));
+    });
+
+    return () => subscription.unsubscribe();
+  }, [watch]);
+
+  useEffect(() => {
+    if (questionIndex > questions.length - 1) {
+      setQuestionIndex(questions.length - 1);
+    }
+  }, [questionIndex, questions.length]);
+
+  async function goNext() {
+    setFormError(null);
+    const isCurrentValid = await trigger(currentQuestion.fields);
+
+    if (!isCurrentValid) {
+      return;
+    }
+
+    setQuestionIndex((current) => Math.min(current + 1, questions.length - 1));
+  }
 
   async function onSubmit(data: AnamneseFormData) {
     setFormError(null);
@@ -237,201 +278,53 @@ export function AnamneseForm() {
   }
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
-      <Card>
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-cocoa">
-          Etapa {step + 1} de {steps.length}
-        </p>
-        <h2 className="mt-2 text-2xl font-bold">{steps[step]}</h2>
-        <form className="mt-6 space-y-5" onSubmit={handleSubmit(onSubmit)}>
-          {step === 0 ? (
-            <div className="grid gap-4 md:grid-cols-2">
-              <FieldError message={errors.fullName?.message} />
-              <Input placeholder="Nome completo" {...register("fullName")} />
-              <Input placeholder="Idade" type="number" {...register("age")} />
-              <Input
-                placeholder="Peso atual (kg)"
-                step="0.1"
-                type="number"
-                {...register("weightKg")}
-              />
-              <Input
-                placeholder="Altura (cm)"
-                type="number"
-                {...register("heightCm")}
-              />
-              <select
-                className="h-11 rounded-lg border border-coal/15 bg-white px-3 text-sm"
-                {...register("biologicalSex")}
-              >
-                <option value="mulher">Mulher</option>
-                <option value="homem">Homem</option>
-                <option value="indefinido">Prefiro revisar com a equipe</option>
-              </select>
-            </div>
-          ) : null}
+    <div className="mx-auto grid max-w-5xl gap-5 lg:grid-cols-[1fr_320px]">
+      <Card className="min-h-[560px]">
+        <div className="mb-8">
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-cocoa">
+              Pergunta {questionIndex + 1} de {questions.length}
+            </p>
+            <span className="text-sm font-semibold text-graphite">{progress}%</span>
+          </div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-coal/10">
+            <div
+              className="h-full rounded-full bg-lime transition-all"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
 
-          {step === 1 ? (
-            <div className="space-y-5">
-              <div>
-                <p className="text-sm font-semibold text-coal">
-                  Objetivos principais
-                </p>
-                <div className="mt-3 grid gap-2 md:grid-cols-2">
-                  {goalOptions.map((option) => (
-                    <label className="flex items-center gap-2 text-sm" key={option}>
-                      <input
-                        className="h-4 w-4"
-                        type="checkbox"
-                        value={option}
-                        {...register("mainGoals")}
-                      />
-                      {option}
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-coal">
-                  Principais dores
-                </p>
-                <div className="mt-3 grid gap-2 md:grid-cols-2">
-                  {difficultyOptions.map((option) => (
-                    <label className="flex items-center gap-2 text-sm" key={option}>
-                      <input
-                        className="h-4 w-4"
-                        type="checkbox"
-                        value={option}
-                        {...register("mainDifficulties")}
-                      />
-                      {option}
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <textarea
-                className="min-h-24 rounded-lg border border-coal/15 bg-white px-3 py-3 text-sm"
-                placeholder="Conte rapidamente seu historico de emagrecimento."
-                {...register("weightLossHistory")}
+        <form
+          className="flex min-h-[430px] flex-col justify-between"
+          onSubmit={handleSubmit(onSubmit)}
+        >
+          <div>
+            <h2 className="max-w-2xl text-3xl font-bold leading-tight text-coal">
+              {currentQuestion.title}
+            </h2>
+            {currentQuestion.helper ? (
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-graphite">
+                {currentQuestion.helper}
+              </p>
+            ) : null}
+            <div className="mt-8">
+              <QuestionField
+                questionKey={currentQuestion.key}
+                register={register}
+                values={values}
               />
             </div>
-          ) : null}
+            <QuestionError question={currentQuestion} errors={errors} />
+            {formError ? <p className="mt-4 text-sm text-red-700">{formError}</p> : null}
+          </div>
 
-          {step === 2 ? (
-            <div className="grid gap-4 md:grid-cols-2">
-              <select
-                className="h-11 rounded-lg border border-coal/15 bg-white px-3 text-sm"
-                {...register("activityLevel")}
-              >
-                <option value="sedentario">Nao pratico atividade fisica</option>
-                <option value="baixo">1 a 2x por semana</option>
-                <option value="moderado">3 a 4x por semana</option>
-                <option value="alto">5x ou mais por semana</option>
-                <option value="muito_alto">Atividade intensa/frequente</option>
-              </select>
-              {activityLevel !== "sedentario" ? (
-                <Input
-                  placeholder="Qual atividade fisica realiza?"
-                  {...register("activityDescription")}
-                />
-              ) : null}
-              <select
-                className="h-11 rounded-lg border border-coal/15 bg-white px-3 text-sm"
-                {...register("sleepHours")}
-              >
-                <option value="">Horas de sono</option>
-                <option value="5 horas ou menos por noite">
-                  5 horas ou menos por noite
-                </option>
-                <option value="6 horas por noite">6 horas por noite</option>
-                <option value="7 horas por noite">7 horas por noite</option>
-                <option value="8 horas ou mais por noite">
-                  8 horas ou mais por noite
-                </option>
-              </select>
-              <select
-                className="h-11 rounded-lg border border-coal/15 bg-white px-3 text-sm"
-                {...register("sleepQuality")}
-              >
-                <option value="">Qualidade do sono</option>
-                <option value="bom">
-                  Bom: nao levanta/desperta durante a noite
-                </option>
-                <option value="regular">
-                  Regular: eventualmente desperta, mas volta a dormir normalmente
-                </option>
-                <option value="ruim">
-                  Ruim: acorda sem motivo aparente ou tem dificuldade para adormecer
-                </option>
-              </select>
-            </div>
-          ) : null}
-
-          {step === 3 ? (
-            <div className="space-y-5">
-              <div>
-                <p className="text-sm font-semibold text-coal">
-                  Tipo de dieta usual
-                </p>
-                <select
-                  className="mt-3 h-11 w-full rounded-lg border border-coal/15 bg-white px-3 text-sm"
-                  {...register("foodPreference")}
-                >
-                  <option value="onivoro">Onivoro</option>
-                  <option value="vegetariano">Vegetariano</option>
-                  <option value="vegano">Vegano</option>
-                  <option value="restricoes">Tenho restricoes alimentares</option>
-                </select>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-coal">Condicoes de saude</p>
-                <div className="mt-3 grid gap-2 md:grid-cols-2">
-                  {healthOptions.map((option) => (
-                    <label className="flex items-center gap-2 text-sm" key={option}>
-                      <input
-                        className="h-4 w-4"
-                        type="checkbox"
-                        value={option}
-                        {...register("healthConditions")}
-                      />
-                      {option}
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <Input
-                max={10}
-                min={0}
-                placeholder="Motivacao de 0 a 10"
-                type="number"
-                {...register("motivation")}
-              />
-              <div className="grid gap-2">
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" {...register("weekendDifficulty")} />
-                  Final de semana costuma atrapalhar
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" {...register("sweetsDifficulty")} />
-                  Doces sao uma dificuldade importante
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" {...register("nightHunger")} />
-                  Sinto fome ou vontade de comer a noite
-                </label>
-              </div>
-            </div>
-          ) : null}
-
-          <ValidationSummary errors={errors} />
-          {formError ? <p className="text-sm text-red-700">{formError}</p> : null}
-
-          <div className="flex flex-wrap gap-3">
-            {step > 0 ? (
+          <div className="mt-8 flex flex-wrap gap-3">
+            {questionIndex > 0 ? (
               <Button
                 onClick={(event) => {
                   event.preventDefault();
-                  setStep((current) => current - 1);
+                  setQuestionIndex((current) => Math.max(current - 1, 0));
                 }}
                 type="button"
                 variant="ghost"
@@ -439,11 +332,11 @@ export function AnamneseForm() {
                 Voltar
               </Button>
             ) : null}
-            {step < steps.length - 1 ? (
+            {questionIndex < questions.length - 1 ? (
               <Button
                 onClick={(event) => {
                   event.preventDefault();
-                  setStep((current) => current + 1);
+                  void goNext();
                 }}
                 type="button"
                 variant="secondary"
@@ -484,30 +377,381 @@ export function AnamneseForm() {
   );
 }
 
-function FieldError({ message }: { message?: string }) {
+function buildQuestions(activityLevel: AnamneseFormData["activityLevel"]): Question[] {
+  const questions: Question[] = [
+    {
+      key: "fullName",
+      title: "Qual e o seu nome completo?",
+      fields: ["fullName"]
+    },
+    {
+      key: "age",
+      title: "Qual e a sua idade?",
+      helper: "A Operacao 12S aceita participantes a partir de 16 anos.",
+      fields: ["age"]
+    },
+    {
+      key: "weightKg",
+      title: "Qual e o seu peso atual?",
+      helper: "Informe em kg. Exemplo: 82.5",
+      fields: ["weightKg"]
+    },
+    {
+      key: "heightCm",
+      title: "Qual e a sua altura?",
+      helper: "Informe em centimetros, sem casa decimal. Exemplo: 170",
+      fields: ["heightCm"]
+    },
+    {
+      key: "biologicalSex",
+      title: "Qual sexo biologico devemos usar para o calculo?",
+      fields: ["biologicalSex"]
+    },
+    {
+      key: "mainGoals",
+      title: "Quais sao seus principais objetivos?",
+      helper: "Selecione todas as opcoes que fazem sentido para voce.",
+      fields: ["mainGoals"]
+    },
+    {
+      key: "mainDifficulties",
+      title: "Quais sao suas principais dores hoje?",
+      helper: "Isso ajuda a direcionar a trilha da operacao.",
+      fields: ["mainDifficulties"]
+    },
+    {
+      key: "weightLossHistory",
+      title: "Como tem sido seu historico de emagrecimento?",
+      helper: "Responda de forma breve. Este campo e opcional.",
+      fields: ["weightLossHistory"]
+    },
+    {
+      key: "activityLevel",
+      title: "Como esta sua rotina de atividade fisica?",
+      fields: ["activityLevel"]
+    }
+  ];
+
+  if (activityLevel !== "sedentario") {
+    questions.push({
+      key: "activityDescription",
+      title: "Qual atividade fisica voce realiza?",
+      fields: ["activityDescription"]
+    });
+  }
+
+  questions.push(
+    {
+      key: "sleepHours",
+      title: "Quantas horas voce costuma dormir por noite?",
+      fields: ["sleepHours"]
+    },
+    {
+      key: "sleepQuality",
+      title: "Como voce avalia a qualidade do seu sono?",
+      fields: ["sleepQuality"]
+    },
+    {
+      key: "foodPreference",
+      title: "Qual e o seu tipo de dieta usual?",
+      fields: ["foodPreference"]
+    },
+    {
+      key: "healthConditions",
+      title: "Existe alguma condicao de saude importante?",
+      helper: "Selecione pelo menos uma opcao, mesmo que seja Nenhuma.",
+      fields: ["healthConditions"]
+    },
+    {
+      key: "motivation",
+      title: "De 0 a 10, qual e sua motivacao hoje?",
+      fields: ["motivation"]
+    },
+    {
+      key: "weekendDifficulty",
+      title: "Final de semana costuma atrapalhar sua rotina?",
+      fields: ["weekendDifficulty"]
+    },
+    {
+      key: "sweetsDifficulty",
+      title: "Doces sao uma dificuldade importante para voce?",
+      fields: ["sweetsDifficulty"]
+    },
+    {
+      key: "nightHunger",
+      title: "Voce sente fome ou vontade de comer a noite?",
+      fields: ["nightHunger"]
+    }
+  );
+
+  return questions;
+}
+
+function QuestionField({
+  questionKey,
+  register
+}: {
+  questionKey: QuestionKey;
+  register: ReturnType<typeof useForm<AnamneseFormData>>["register"];
+  values: AnamneseFormData;
+}) {
+  switch (questionKey) {
+    case "fullName":
+      return <Input autoFocus placeholder="Nome completo" {...register("fullName")} />;
+    case "age":
+      return <Input autoFocus placeholder="Idade" type="number" {...register("age")} />;
+    case "weightKg":
+      return (
+        <Input
+          autoFocus
+          placeholder="Peso atual (kg)"
+          step="0.1"
+          type="number"
+          {...register("weightKg")}
+        />
+      );
+    case "heightCm":
+      return (
+        <Input
+          autoFocus
+          placeholder="Altura em centimetros"
+          type="number"
+          {...register("heightCm")}
+        />
+      );
+    case "biologicalSex":
+      return (
+        <OptionGrid>
+          <RadioOption label="Mulher" value="mulher" {...register("biologicalSex")} />
+          <RadioOption label="Homem" value="homem" {...register("biologicalSex")} />
+          <RadioOption
+            label="Prefiro revisar com a equipe"
+            value="indefinido"
+            {...register("biologicalSex")}
+          />
+        </OptionGrid>
+      );
+    case "mainGoals":
+      return (
+        <OptionGrid>
+          {goalOptions.map((option) => (
+            <CheckboxOption
+              key={option}
+              label={option}
+              value={option}
+              {...register("mainGoals")}
+            />
+          ))}
+        </OptionGrid>
+      );
+    case "mainDifficulties":
+      return (
+        <OptionGrid>
+          {difficultyOptions.map((option) => (
+            <CheckboxOption
+              key={option}
+              label={option}
+              value={option}
+              {...register("mainDifficulties")}
+            />
+          ))}
+        </OptionGrid>
+      );
+    case "weightLossHistory":
+      return (
+        <textarea
+          autoFocus
+          className="min-h-36 w-full rounded-lg border border-coal/15 bg-white px-3 py-3 text-sm outline-none focus:border-coal focus:ring-2 focus:ring-coal/10"
+          placeholder="Conte rapidamente seu historico de emagrecimento."
+          {...register("weightLossHistory")}
+        />
+      );
+    case "activityLevel":
+      return (
+        <OptionGrid>
+          <RadioOption
+            label="Nao pratico atividade fisica"
+            value="sedentario"
+            {...register("activityLevel")}
+          />
+          <RadioOption label="1 a 2x por semana" value="baixo" {...register("activityLevel")} />
+          <RadioOption
+            label="3 a 4x por semana"
+            value="moderado"
+            {...register("activityLevel")}
+          />
+          <RadioOption label="5x ou mais por semana" value="alto" {...register("activityLevel")} />
+          <RadioOption
+            label="Atividade intensa/frequente"
+            value="muito_alto"
+            {...register("activityLevel")}
+          />
+        </OptionGrid>
+      );
+    case "activityDescription":
+      return (
+        <Input
+          autoFocus
+          placeholder="Exemplo: musculacao, caminhada, corrida, funcional..."
+          {...register("activityDescription")}
+        />
+      );
+    case "sleepHours":
+      return (
+        <OptionGrid>
+          <RadioOption
+            label="5 horas ou menos por noite"
+            value="5 horas ou menos por noite"
+            {...register("sleepHours")}
+          />
+          <RadioOption
+            label="6 horas por noite"
+            value="6 horas por noite"
+            {...register("sleepHours")}
+          />
+          <RadioOption
+            label="7 horas por noite"
+            value="7 horas por noite"
+            {...register("sleepHours")}
+          />
+          <RadioOption
+            label="8 horas ou mais por noite"
+            value="8 horas ou mais por noite"
+            {...register("sleepHours")}
+          />
+        </OptionGrid>
+      );
+    case "sleepQuality":
+      return (
+        <OptionGrid>
+          <RadioOption
+            label="Bom: nao levanta/desperta durante a noite"
+            value="bom"
+            {...register("sleepQuality")}
+          />
+          <RadioOption
+            label="Regular: eventualmente desperta, mas volta a dormir normalmente"
+            value="regular"
+            {...register("sleepQuality")}
+          />
+          <RadioOption
+            label="Ruim: acorda sem motivo aparente ou tem dificuldade para adormecer"
+            value="ruim"
+            {...register("sleepQuality")}
+          />
+        </OptionGrid>
+      );
+    case "foodPreference":
+      return (
+        <OptionGrid>
+          <RadioOption label="Onivoro" value="onivoro" {...register("foodPreference")} />
+          <RadioOption label="Vegetariano" value="vegetariano" {...register("foodPreference")} />
+          <RadioOption label="Vegano" value="vegano" {...register("foodPreference")} />
+          <RadioOption
+            label="Tenho restricoes alimentares"
+            value="restricoes"
+            {...register("foodPreference")}
+          />
+        </OptionGrid>
+      );
+    case "healthConditions":
+      return (
+        <OptionGrid>
+          {healthOptions.map((option) => (
+            <CheckboxOption
+              key={option}
+              label={option}
+              value={option}
+              {...register("healthConditions")}
+            />
+          ))}
+        </OptionGrid>
+      );
+    case "motivation":
+      return (
+        <Input
+          autoFocus
+          max={10}
+          min={0}
+          placeholder="Motivacao de 0 a 10"
+          type="number"
+          {...register("motivation")}
+        />
+      );
+    case "weekendDifficulty":
+      return <BooleanQuestion label="Sim, final de semana costuma atrapalhar" register={register("weekendDifficulty")} />;
+    case "sweetsDifficulty":
+      return <BooleanQuestion label="Sim, doces sao uma dificuldade importante" register={register("sweetsDifficulty")} />;
+    case "nightHunger":
+      return <BooleanQuestion label="Sim, sinto fome ou vontade de comer a noite" register={register("nightHunger")} />;
+  }
+}
+
+function OptionGrid({ children }: { children: React.ReactNode }) {
+  return <div className="grid gap-3 md:grid-cols-2">{children}</div>;
+}
+
+function RadioOption({
+  label,
+  ...props
+}: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) {
+  return (
+    <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-coal/12 bg-white px-4 py-3 text-sm transition hover:border-coal/30">
+      <input className="h-4 w-4" type="radio" {...props} />
+      {label}
+    </label>
+  );
+}
+
+function CheckboxOption({
+  label,
+  ...props
+}: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) {
+  return (
+    <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-coal/12 bg-white px-4 py-3 text-sm transition hover:border-coal/30">
+      <input className="h-4 w-4" type="checkbox" {...props} />
+      {label}
+    </label>
+  );
+}
+
+function BooleanQuestion({
+  label,
+  register
+}: {
+  label: string;
+  register: ReturnType<typeof useForm<AnamneseFormData>>["register"] extends (
+    name: infer _Name
+  ) => infer Return
+    ? Return
+    : never;
+}) {
+  return (
+    <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-coal/12 bg-white px-4 py-3 text-sm transition hover:border-coal/30">
+      <input className="h-4 w-4" type="checkbox" {...register} />
+      {label}
+    </label>
+  );
+}
+
+function QuestionError({
+  errors,
+  question
+}: {
+  errors: ReturnType<typeof useForm<AnamneseFormData>>["formState"]["errors"];
+  question: Question;
+}) {
+  const message = question.fields
+    .map((field) => errors[field]?.message)
+    .find(Boolean);
+
   if (!message) {
     return null;
   }
 
-  return <p className="md:col-span-2 text-sm text-red-700">{message}</p>;
-}
-
-function ValidationSummary({
-  errors
-}: {
-  errors: ReturnType<typeof useForm<AnamneseFormData>>["formState"]["errors"];
-}) {
-  const messages = Object.values(errors)
-    .map((error) => error?.message)
-    .filter(Boolean);
-
-  if (!messages.length) {
-    return null;
-  }
-
   return (
-    <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-      {messages[0]}
+    <div className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+      {message}
     </div>
   );
 }
