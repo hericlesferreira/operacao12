@@ -4,9 +4,9 @@ export const anamneseSchema = z.object({
   birthDate: z
     .string()
     .min(1, "Informe sua data de nascimento.")
-    .refine((value) => calculateAge(value) >= 16, "Idade minima: 16 anos."),
-  biologicalSex: z.enum(["homem", "mulher", "indefinido"], {
-    required_error: "Selecione o sexo biologico."
+    .refine((value) => calculateAge(value) >= 16, "Idade mínima: 16 anos."),
+  biologicalSex: z.enum(["homem", "mulher"], {
+    required_error: "Selecione o sexo."
   }),
   weightKg: z.coerce
     .number()
@@ -14,21 +14,19 @@ export const anamneseSchema = z.object({
     .max(250, "Peso maximo: 250 kg."),
   heightCm: z.coerce
     .number()
-    .int("Informe a altura em centimetros, sem casas decimais.")
-    .min(130, "Altura minima: 130 cm.")
-    .max(230, "Altura maxima: 230 cm."),
+    .int("Informe a altura em centímetros, sem casas decimais.")
+    .min(130, "Altura mínima: 130 cm.")
+    .max(230, "Altura máxima: 230 cm."),
   mainGoals: z.array(z.string()).min(1, "Selecione pelo menos um objetivo."),
   weightLossHistory: z.string().optional(),
-  mainDifficulties: z
-    .array(z.string())
-    .min(1, "Selecione pelo menos uma opcao."),
+  mainDifficulties: z.array(z.string()).min(1, "Selecione pelo menos uma opção."),
   activityLevel: z.enum(["sedentario", "baixo", "moderado", "alto", "muito_alto"], {
     required_error: "Selecione o nivel de atividade."
   }),
   activityDescription: z.string().optional(),
   sleepHours: z.string().optional(),
   sleepQuality: z.string().optional(),
-  healthConditions: z.array(z.string()).min(1, "Selecione pelo menos uma opcao."),
+  healthConditions: z.array(z.string()).min(1, "Selecione pelo menos uma opção."),
   healthConditionOther: z.string().optional(),
   foodPreferences: z
     .array(z.string())
@@ -39,23 +37,23 @@ export const anamneseSchema = z.object({
   motivation: z.coerce
     .number()
     .int()
-    .min(1, "Motivacao minima: 1.")
-    .max(10, "Motivacao maxima: 10."),
+    .min(1, "Motivação mínima: 1.")
+    .max(10, "Motivação máxima: 10."),
   weekendDifficulty: z.enum(["sim", "nao"]),
   weekendDifficultyReason: z.string().optional(),
   sweetsDifficulty: z.enum(["sim", "nao", "nao_sei"]),
   nightHunger: z.enum(["sim", "nao", "nao_sei"]),
-  neckCm: z.coerce.number().positive("Informe a circunferencia do pescoco."),
-  armCm: z.coerce.number().positive("Informe a circunferencia do braco."),
-  waistCm: z.coerce.number().positive("Informe a circunferencia da cintura."),
-  abdomenCm: z.coerce.number().positive("Informe a circunferencia do abdomen."),
-  thighCm: z.coerce.number().positive("Informe a circunferencia da coxa."),
-  calfCm: z.coerce.number().positive("Informe a circunferencia da panturrilha.")
+  neckCm: z.coerce.number().positive("Informe a circunferência do pescoço."),
+  armCm: z.coerce.number().positive("Informe a circunferência do braço."),
+  waistCm: z.coerce.number().positive("Informe a circunferência da cintura."),
+  abdomenCm: z.coerce.number().positive("Informe a circunferência do abdômen."),
+  thighCm: z.coerce.number().positive("Informe a circunferência da coxa."),
+  calfCm: z.coerce.number().positive("Informe a circunferência da panturrilha.")
 }).superRefine((data, context) => {
   if (data.activityLevel !== "sedentario" && !data.activityDescription?.trim()) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "Informe qual atividade fisica voce realiza.",
+      message: "Informe qual atividade física você realiza.",
       path: ["activityDescription"]
     });
   }
@@ -71,7 +69,7 @@ export const anamneseSchema = z.object({
   if (data.healthConditions.includes("Outro") && !data.healthConditionOther?.trim()) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "Informe qual condicao de saude.",
+      message: "Informe qual condição de saúde.",
       path: ["healthConditionOther"]
     });
   }
