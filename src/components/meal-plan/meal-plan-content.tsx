@@ -102,7 +102,10 @@ export function MealPlanContent() {
   const plan =
     isMealPlanCode(selectedPlanCode) ? operation12sMealPlans[selectedPlanCode] : null;
   const isApproved = state.curationStatus === "aprovado" && Boolean(state.approvedPlanCode);
-  const sourceLabel = isApproved ? "Plano aprovado pela equipe" : "Plano indicado automaticamente";
+  const sourceLabel = isApproved ? "Plano aprovado pelo nutri" : "Plano indicado automaticamente";
+  const approvalMessage = isApproved
+    ? "Plano e trilha aprovados pelo nutri."
+    : "Você já pode seguir este plano e esta trilha, mas eles ainda podem sofrer alterações pois estão pendentes de aprovação do nutri.";
 
   if (state.loading) {
     return <Card>Carregando plano alimentar...</Card>;
@@ -131,6 +134,9 @@ export function MealPlanContent() {
           {sourceLabel}
         </p>
         <h2 className="mt-3 text-3xl font-bold">{plan.title}</h2>
+        <div className="mt-5 rounded-lg border border-white/15 bg-white/10 px-4 py-3 text-sm font-semibold leading-6 text-white">
+          {approvalMessage}
+        </div>
         <p className="mt-3 max-w-2xl leading-7 text-white/78">
           Este é o PDF de teste liberado para validar a entrega automática do plano.
           Depois, substituímos esses arquivos pelos PDFs finais.

@@ -13,11 +13,13 @@ import {
   type BiologicalSex
 } from "@/lib/calculations/metabolic";
 import { supabase } from "@/lib/supabase/client";
+import { generateTrailContent } from "@/lib/trail/generator";
 import {
   anamneseSchema,
   calculateAge,
   type AnamneseFormData
 } from "@/schemas/anamnese";
+import type { Json } from "@/types/database";
 
 const draftStorageKey = "operacao12s:anamnese-draft";
 
@@ -303,7 +305,7 @@ export function AnamneseForm() {
           raw_answers: data,
           completed_at: new Date().toISOString()
         })
-        .select("id")
+        .select("*")
         .single();
 
       if (anamneseError || !anamnese) {
@@ -312,7 +314,7 @@ export function AnamneseForm() {
         return;
       }
 
-      const { error: calculationError } = await supabase
+      const { data: calculation, error: calculationError } = await supabase
         .from("metabolic_calculations")
         .insert({
           user_id: user.id,
@@ -327,25 +329,61 @@ export function AnamneseForm() {
             ? "revisao_recomendada"
             : "sem_revisao",
           review_reasons: metabolic.reviewReasons
-        });
+        })
+        .select("*")
+        .single();
 
-      if (calculationError) {
-        setFormError(calculationError.message);
+      if (calculationError || !calculation) {
+        setFormError(calculationError?.message ?? "Não foi possível gerar o cálculo metabólico.");
         setIsSubmitting(false);
         return;
       }
 
-      await supabase.from("physical_assessments").upsert({
-        user_id: user.id,
-        week: 0,
-        weight_kg: data.weightKg,
-        neck_cm: data.neckCm,
-        arm_cm: data.armCm,
-        waist_cm: data.waistCm,
-        abdomen_cm: data.abdomenCm,
-        thigh_cm: data.thighCm,
-        calf_cm: data.calfCm
+      const { data: assessment, error: assessmentError } = await supabase
+        .from("physical_assessments")
+        .upsert({
+          user_id: user.id,
+          week: 0,
+          weight_kg: data.weightKg,
+          neck_cm: data.neckCm,
+          arm_cm: data.armCm,
+          waist_cm: data.waistCm,
+          abdomen_cm: data.abdomenCm,
+          thigh_cm: data.thighCm,
+          calf_cm: data.calfCm
+        }, {
+          onConflict: "user_id,week"
+        })
+        .select("*")
+        .single();
+
+      if (assessmentError || !assessment) {
+        setFormError(assessmentError?.message ?? "Não foi possível salvar a avaliação física.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const trailContent = generateTrailContent({
+        anamnese,
+        assessment,
+        calculation,
+        curation: null
       });
+
+      const { error: trailError } = await supabase.from("operation_trails").insert({
+        user_id: user.id,
+        anamnese_id: anamnese.id,
+        calculation_id: calculation.id,
+        priorities: trailContent as unknown as Json,
+        recommended_materials: [],
+        generated_at: new Date().toISOString()
+      });
+
+      if (trailError) {
+        setFormError(trailError.message);
+        setIsSubmitting(false);
+        return;
+      }
 
       window.localStorage.removeItem(draftStorageKey);
       router.push("/dashboard");

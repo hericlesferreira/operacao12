@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { CheckCircle2, ClipboardList, Flame, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { getPostLoginRedirectPath } from "@/lib/auth/redirect";
 import { supabase } from "@/lib/supabase/client";
 import type { Json } from "@/types/database";
 
@@ -27,19 +28,29 @@ type TrailViewState = {
   loading: boolean;
   content: TrailContent | null;
   generatedAt: string | null;
+  curationStatus: string | null;
+  approvedPlanCode: string | null;
 };
 
 export function TrailView() {
   const [state, setState] = useState<TrailViewState>({
     loading: true,
     content: null,
-    generatedAt: null
+    generatedAt: null,
+    curationStatus: null,
+    approvedPlanCode: null
   });
 
   useEffect(() => {
     async function loadTrail() {
       if (!supabase) {
-        setState({ loading: false, content: null, generatedAt: null });
+        setState({
+          loading: false,
+          content: null,
+          generatedAt: null,
+          curationStatus: null,
+          approvedPlanCode: null
+        });
         return;
       }
 
@@ -52,23 +63,44 @@ export function TrailView() {
         return;
       }
 
-      const { data } = await supabase
-        .from("operation_trails")
-        .select("priorities, generated_at, created_at")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const redirectPath = await getPostLoginRedirectPath(user.id);
+
+      if (redirectPath === "/admin") {
+        window.location.replace("/admin");
+        return;
+      }
+
+      const [{ data: trail }, { data: curation }] = await Promise.all([
+        supabase
+          .from("operation_trails")
+          .select("priorities, generated_at, created_at")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("plan_curations")
+          .select("status, approved_plan_code")
+          .eq("user_id", user.id)
+          .maybeSingle()
+      ]);
 
       setState({
         loading: false,
-        content: parseTrailContent(data?.priorities ?? null),
-        generatedAt: data?.generated_at ?? data?.created_at ?? null
+        content: parseTrailContent(trail?.priorities ?? null),
+        generatedAt: trail?.generated_at ?? trail?.created_at ?? null,
+        curationStatus: curation?.status ?? null,
+        approvedPlanCode: curation?.approved_plan_code ?? null
       });
     }
 
     void loadTrail();
   }, []);
+
+  const isApproved = state.curationStatus === "aprovado" && Boolean(state.approvedPlanCode);
+  const approvalMessage = isApproved
+    ? "Plano e trilha aprovados pelo nutri."
+    : "Você já pode seguir este plano e esta trilha, mas eles ainda podem sofrer alterações pois estão pendentes de aprovação do nutri.";
 
   if (state.loading) {
     return <Card>Carregando sua trilha...</Card>;
@@ -79,8 +111,7 @@ export function TrailView() {
       <Card className="max-w-3xl">
         <h2 className="text-2xl font-bold">Sua trilha ainda está em preparo</h2>
         <p className="mt-3 leading-7 text-graphite">
-          Depois da anamnese e da curadoria do plano alimentar, sua Trilha da
-          Operação será liberada aqui.
+          Depois da anamnese, sua Trilha da Operação será liberada aqui.
         </p>
         <Link href="/dashboard">
           <Button className="mt-6" variant="secondary">
@@ -98,6 +129,9 @@ export function TrailView() {
           Trilha da Operação 12S
         </p>
         <h2 className="mt-3 max-w-4xl text-3xl font-bold">{state.content.headline}</h2>
+        <div className="mt-5 rounded-lg border border-white/15 bg-white/10 px-4 py-3 text-sm font-semibold leading-6 text-white">
+          {approvalMessage}
+        </div>
         <p className="mt-3 max-w-3xl leading-7 text-white/78">{state.content.summary}</p>
         {state.generatedAt ? (
           <p className="mt-5 text-sm text-white/60">
