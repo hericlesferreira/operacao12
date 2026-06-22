@@ -107,10 +107,10 @@ export function AdminShell({ children, title }: AdminShellProps) {
         <main className="px-4 py-6 md:px-8">{children}</main>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-2 border-t border-coal/10 bg-coal px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 text-white shadow-panel lg:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-2 border-t border-coal/20 bg-lime px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 text-coal shadow-panel lg:hidden">
         {adminNavigation.map((item) => (
           <Link
-            className="flex min-w-0 flex-col items-center gap-1 rounded-lg px-2 py-2 text-center text-[11px] font-semibold text-white/75 transition hover:bg-white/10 hover:text-white"
+            className="flex min-w-0 flex-col items-center gap-1 rounded-lg px-2 py-2 text-center text-[11px] font-semibold text-coal/75 transition hover:bg-coal/10 hover:text-coal"
             href={item.href}
             key={item.href}
           >
