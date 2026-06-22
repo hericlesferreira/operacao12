@@ -265,8 +265,8 @@ export function AnamneseForm() {
       }
 
       window.localStorage.removeItem(draftStorageKey);
-      router.push("/dashboard?anamnese=concluida");
-      router.refresh();
+      window.sessionStorage.setItem("operacao12s:anamnese-completed", "1");
+      router.replace("/dashboard?anamnese=concluida");
     } catch (error) {
       setFormError(
         error instanceof Error

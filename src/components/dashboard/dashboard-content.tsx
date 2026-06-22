@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { CalendarDays, FileDown, Flame, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { getPostLoginRedirectPath } from "@/lib/auth/redirect";
 import { operation12sMealPlans } from "@/lib/calculations/metabolic";
 import { supabase } from "@/lib/supabase/client";
 
@@ -44,18 +43,12 @@ export function DashboardContent() {
       }
 
       const {
-        data: { user }
-      } = await supabase.auth.getUser();
+        data: { session }
+      } = await supabase.auth.getSession();
+      const user = session?.user;
 
       if (!user) {
         window.location.replace("/auth/login");
-        return;
-      }
-
-      const redirectPath = await getPostLoginRedirectPath(user.id);
-
-      if (redirectPath === "/admin") {
-        window.location.replace("/admin");
         return;
       }
 
@@ -66,7 +59,11 @@ export function DashboardContent() {
         { data: curation },
         { data: trail }
       ] = await Promise.all([
-        supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
+        supabase
+          .from("profiles")
+          .select("full_name, role, must_change_password")
+          .eq("id", user.id)
+          .maybeSingle(),
         supabase
           .from("anamneses")
           .select("id")
@@ -97,6 +94,16 @@ export function DashboardContent() {
           .maybeSingle()
       ]);
 
+      if (profile?.role === "admin") {
+        window.location.replace("/admin");
+        return;
+      }
+
+      if (profile?.must_change_password) {
+        window.location.replace("/perfil?primeiroAcesso=1");
+        return;
+      }
+
       setState({
         loading: false,
         fullName: profile?.full_name ?? null,
@@ -123,9 +130,20 @@ export function DashboardContent() {
   }, []);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+    if (state.loading) {
+      return;
+    }
 
-    if (params.get("anamnese") !== "concluida") {
+    const params = new URLSearchParams(window.location.search);
+    const anamneseCompleted = params.get("anamnese") === "concluida";
+    const anamneseCompletedStored =
+      window.sessionStorage.getItem("operacao12s:anamnese-completed") === "1";
+
+    if (!anamneseCompleted && !anamneseCompletedStored) {
+      return;
+    }
+
+    if (!state.hasAnamnese || !state.calculation || !state.hasTrail) {
       return;
     }
 
@@ -133,11 +151,12 @@ export function DashboardContent() {
       "Questionário Operação 12S concluído com sucesso!\n\nSeu plano alimentar e sua trilha da Operação já foram liberados automaticamente.\n\nVocê já pode seguir este plano e esta trilha, mas eles ainda podem sofrer alterações pois estão pendentes de aprovação do nutri."
     );
 
+    window.sessionStorage.removeItem("operacao12s:anamnese-completed");
     params.delete("anamnese");
     const nextSearch = params.toString();
     const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}`;
     window.history.replaceState(null, "", nextUrl);
-  }, []);
+  }, [state.calculation, state.hasAnamnese, state.hasTrail, state.loading]);
 
   useEffect(() => {
     if (state.loading) {
@@ -186,10 +205,9 @@ export function DashboardContent() {
     },
     {
       label: "Plano indicado",
-      value:
-        state.curation?.status === "aprovado" && plan
-          ? `${plan.title} (${plan.calories} kcal)`
-          : "Em análise",
+      value: plan
+        ? `${plan.title} (${plan.calories} kcal)`
+        : "Aguardando questionário",
       icon: Target
     }
   ];
