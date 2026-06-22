@@ -51,7 +51,10 @@ export function AppShell({ children, title, eyebrow = "Operacao 12S" }: AppShell
         <main className="px-4 py-6 md:px-8">{children}</main>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-4 border-t border-coal/10 bg-coal px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 text-white shadow-panel lg:hidden">
+      <nav
+        className="fixed inset-x-0 bottom-0 z-20 grid border-t border-coal/10 bg-coal px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 text-white shadow-panel lg:hidden"
+        style={{ gridTemplateColumns: `repeat(${participantNavigation.length}, minmax(0, 1fr))` }}
+      >
         {participantNavigation.map((item) => (
           <Link
             className="flex min-w-0 flex-col items-center gap-1 rounded-lg px-2 py-2 text-center text-[11px] font-semibold text-white/75 transition hover:bg-white/10 hover:text-white"

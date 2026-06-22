@@ -142,6 +142,29 @@ export function TrailView() {
         ) : null}
       </Card>
 
+      <Card className="overflow-hidden bg-linen">
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-cocoa">
+          Mapa da operação
+        </p>
+        <h3 className="mt-2 text-2xl font-bold">Seu caminho inicial</h3>
+        <div className="mt-6 grid gap-4 md:grid-cols-4">
+          {buildTrailSteps(state.content).map((step, index) => (
+            <div className="relative" key={step.title}>
+              {index < 3 ? (
+                <div className="absolute left-8 top-7 hidden h-px w-[calc(100%+1rem)] bg-cocoa/25 md:block" />
+              ) : null}
+              <div className="relative rounded-lg border border-coal/10 bg-white p-4 shadow-sm">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-coal text-sm font-bold text-lime">
+                  {index + 1}
+                </span>
+                <h4 className="mt-4 font-bold text-coal">{step.title}</h4>
+                <p className="mt-2 text-sm leading-6 text-graphite">{step.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
       <div className="grid gap-5 lg:grid-cols-[1fr_0.8fr]">
         <Card>
           <div className="flex items-center gap-3">
@@ -230,6 +253,32 @@ function NumberedList({ items }: { items: string[] }) {
       ))}
     </ol>
   );
+}
+
+function buildTrailSteps(content: TrailContent) {
+  return [
+    {
+      title: "Entender o ponto de partida",
+      description:
+        content.startingPoint.find((item) => item.label === "Plano alimentar")?.value ??
+        "Organizar dados iniciais."
+    },
+    {
+      title: "Seguir a estratégia alimentar",
+      description: content.eatingStrategy[0] ?? "Executar o plano com consistência."
+    },
+    {
+      title: "Focar nas prioridades",
+      description: content.priorities[0] ?? "Transformar o plano em rotina prática."
+    },
+    {
+      title: "Acompanhar evolução",
+      description:
+        content.initialAssessment.length > 0
+          ? "Usar as medidas iniciais como referência para comparar progresso."
+          : "Registrar medidas para acompanhar progresso real."
+    }
+  ];
 }
 
 function parseTrailContent(value: Json | null): TrailContent | null {

@@ -76,6 +76,7 @@ export async function POST(request: Request) {
       whatsapp,
       role: "participant",
       access_status: "ativo",
+      must_change_password: true,
       access_starts_at: new Date().toISOString(),
       access_expires_at: new Date(
         Date.now() + 365 * 24 * 60 * 60 * 1000

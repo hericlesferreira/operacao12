@@ -32,6 +32,7 @@ export type Database = {
           access_status: Database["public"]["Enums"]["access_status"];
           access_starts_at: string | null;
           access_expires_at: string | null;
+          must_change_password: boolean;
           purchase_source: string | null;
           transaction_code: string | null;
           created_at: string;
@@ -46,6 +47,7 @@ export type Database = {
           access_status?: Database["public"]["Enums"]["access_status"];
           access_starts_at?: string | null;
           access_expires_at?: string | null;
+          must_change_password?: boolean;
           purchase_source?: string | null;
           transaction_code?: string | null;
           created_at?: string;

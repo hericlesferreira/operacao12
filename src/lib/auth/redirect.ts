@@ -7,9 +7,17 @@ export async function getPostLoginRedirectPath(userId: string) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, must_change_password")
     .eq("id", userId)
     .maybeSingle();
 
-  return profile?.role === "admin" ? "/admin" : "/dashboard";
+  if (profile?.role === "admin") {
+    return "/admin";
+  }
+
+  if (profile?.must_change_password) {
+    return "/perfil?primeiroAcesso=1";
+  }
+
+  return "/dashboard";
 }

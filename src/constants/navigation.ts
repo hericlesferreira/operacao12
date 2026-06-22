@@ -4,14 +4,16 @@ import {
   Home,
   Route,
   ShieldCheck,
+  User,
   Utensils
 } from "lucide-react";
 
 export const participantNavigation = [
   { label: "Dashboard", href: "/dashboard", icon: Home },
   { label: "Trilha", href: "/trilha", icon: Route },
-  { label: "Plano alimentar", href: "/plano-alimentar", icon: Utensils },
-  { label: "Avaliações", href: "/avaliacoes", icon: BarChart3 }
+  { label: "Plano", href: "/plano-alimentar", icon: Utensils },
+  { label: "Avaliações", href: "/avaliacoes", icon: BarChart3 },
+  { label: "Perfil", href: "/perfil", icon: User }
 ];
 
 export const adminNavigation = [
