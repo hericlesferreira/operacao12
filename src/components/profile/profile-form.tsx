@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LockKeyhole, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,12 +17,13 @@ type ProfileState = {
 };
 
 type ApiResult = {
+  email?: string;
   error?: string;
   message?: string;
+  passwordChanged?: boolean;
 };
 
 export function ProfileForm() {
-  const router = useRouter();
   const [state, setState] = useState<ProfileState>({
     loading: true,
     fullName: "",
@@ -86,7 +86,6 @@ export function ProfileForm() {
     setMessage(null);
 
     const needsPasswordChange = state.mustChangePassword || isFirstAccess;
-    const changedPassword = Boolean(password);
 
     if (needsPasswordChange && !password) {
       setError("Para continuar, crie uma nova senha.");
@@ -135,24 +134,39 @@ export function ProfileForm() {
     });
     const result = (await response.json()) as ApiResult;
 
-    setSaving(false);
-
     if (!response.ok) {
+      setSaving(false);
       setError(result.error ?? "Não foi possível atualizar seu perfil.");
       return;
     }
 
+    if (result.passwordChanged) {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: result.email ?? state.email,
+        password
+      });
+
+      setSaving(false);
+
+      if (signInError) {
+        setError(
+          "Senha alterada, mas não foi possível renovar sua sessão automaticamente. Faça login novamente com a nova senha."
+        );
+        return;
+      }
+
+      window.sessionStorage.setItem("operacao12s:password-changed", "1");
+      window.alert("Senha alterada com sucesso.");
+      window.location.replace("/dashboard?senhaAlterada=1");
+      return;
+    }
+
+    setSaving(false);
     setMessage(result.message ?? "Perfil atualizado.");
     setPassword("");
     setConfirmPassword("");
     setState((current) => ({ ...current, mustChangePassword: false }));
     window.history.replaceState(null, "", "/perfil");
-
-    if (changedPassword) {
-      window.alert("Senha alterada com sucesso.");
-      router.replace("/dashboard?senhaAlterada=1");
-      router.refresh();
-    }
   }
 
   if (state.loading) {

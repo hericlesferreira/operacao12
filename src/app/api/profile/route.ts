@@ -88,9 +88,11 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({
+      email,
       message: password
         ? "Perfil e senha atualizados com sucesso."
-        : "Perfil atualizado com sucesso."
+        : "Perfil atualizado com sucesso.",
+      passwordChanged: Boolean(password)
     });
   } catch (error) {
     return NextResponse.json(

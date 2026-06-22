@@ -145,8 +145,11 @@ export function DashboardContent() {
     }
 
     const params = new URLSearchParams(window.location.search);
+    const passwordChanged = params.get("senhaAlterada") === "1";
+    const passwordChangedStored =
+      window.sessionStorage.getItem("operacao12s:password-changed") === "1";
 
-    if (params.get("senhaAlterada") !== "1") {
+    if (!passwordChanged && !passwordChangedStored) {
       return;
     }
 
@@ -156,6 +159,7 @@ export function DashboardContent() {
       );
     }
 
+    window.sessionStorage.removeItem("operacao12s:password-changed");
     params.delete("senhaAlterada");
     const nextSearch = params.toString();
     const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}`;
