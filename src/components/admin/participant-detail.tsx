@@ -130,7 +130,7 @@ export function ParticipantDetail({ participantId }: { participantId: string }) 
   return (
     <div>
       <Link href="/admin/participantes">
-        <Button className="mb-5 bg-white/10 text-white hover:bg-white/15" variant="ghost">
+        <Button className="mb-5 border border-coal/10 bg-white text-coal hover:bg-linen" variant="ghost">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Voltar para participantes
         </Button>
