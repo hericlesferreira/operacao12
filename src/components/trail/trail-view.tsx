@@ -111,7 +111,7 @@ export function TrailView() {
       <Card className="max-w-3xl">
         <h2 className="text-2xl font-bold">Sua trilha ainda está em preparo</h2>
         <p className="mt-3 leading-7 text-graphite">
-          Depois da anamnese, sua Trilha da Operação será liberada aqui.
+          Depois do Questionário Operação 12S, sua Trilha da Operação será liberada aqui.
         </p>
         <Link href="/dashboard">
           <Button className="mt-6" variant="secondary">

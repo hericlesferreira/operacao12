@@ -74,7 +74,7 @@ export async function POST(request: Request) {
 
     if (!anamnese) {
       return NextResponse.json(
-        { error: "Participante ainda não respondeu à anamnese." },
+        { error: "Participante ainda não respondeu ao questionário." },
         { status: 400 }
       );
     }

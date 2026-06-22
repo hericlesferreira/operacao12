@@ -130,7 +130,7 @@ export function DashboardContent() {
     }
 
     window.alert(
-      "Anamnese concluída com sucesso!\n\nSeu plano alimentar e sua trilha da Operação já foram liberados automaticamente.\n\nVocê já pode seguir este plano e esta trilha, mas eles ainda podem sofrer alterações pois estão pendentes de aprovação do nutri."
+      "Questionário Operação 12S concluído com sucesso!\n\nSeu plano alimentar e sua trilha da Operação já foram liberados automaticamente.\n\nVocê já pode seguir este plano e esta trilha, mas eles ainda podem sofrer alterações pois estão pendentes de aprovação do nutri."
     );
 
     params.delete("anamnese");
@@ -138,6 +138,29 @@ export function DashboardContent() {
     const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}`;
     window.history.replaceState(null, "", nextUrl);
   }, []);
+
+  useEffect(() => {
+    if (state.loading) {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get("senhaAlterada") !== "1") {
+      return;
+    }
+
+    if (!state.hasAnamnese) {
+      window.alert(
+        "Comece preenchendo o questionário Iniciar Operação 12S."
+      );
+    }
+
+    params.delete("senhaAlterada");
+    const nextSearch = params.toString();
+    const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}`;
+    window.history.replaceState(null, "", nextUrl);
+  }, [state.hasAnamnese, state.loading]);
 
   const selectedPlanCode =
     state.curation?.approvedPlanCode ?? state.calculation?.indicatedPlanCode;
@@ -154,7 +177,7 @@ export function DashboardContent() {
       label: "Meta calórica",
       value: state.calculation?.cutTargetCalories
         ? `${state.calculation.cutTargetCalories} kcal`
-        : "Aguardando anamnese",
+        : "Aguardando questionário",
       icon: Flame
     },
     {
@@ -183,12 +206,12 @@ export function DashboardContent() {
           </h2>
           <p className="mt-3 max-w-2xl leading-7 text-graphite">
             {state.hasAnamnese
-              ? "Sua anamnese foi registrada. A equipe vai revisar a curadoria antes da entrega final do plano."
-              : "O próximo passo é concluir a anamnese para gerar cálculos, plano indicado e trilha da operação."}
+              ? "Seu Questionário Operação 12S foi registrado. A equipe vai revisar a curadoria antes da entrega final do plano."
+              : "O próximo passo é concluir o Questionário Operação 12S para gerar cálculos, plano indicado e trilha da operação."}
           </p>
           <Link href="/onboarding/anamnese">
             <Button className="mt-6" variant="secondary">
-              {state.hasAnamnese ? "Atualizar anamnese" : "Responder anamnese"}
+              {state.hasAnamnese ? "Atualizar questionário" : "Iniciar Operação 12S"}
             </Button>
           </Link>
         </Card>
@@ -201,7 +224,7 @@ export function DashboardContent() {
               ? "Sua trilha inicial já está disponível com ponto de partida, estratégia alimentar e prioridades."
               : state.hasAnamnese
                 ? "A próxima etapa é a equipe liberar sua trilha com ponto de partida, estratégia alimentar e prioridades."
-                : "A trilha será liberada depois da anamnese e dos cálculos."}
+                : "A trilha será liberada depois do questionário e dos cálculos."}
           </p>
           {state.hasTrail ? (
             <Link href="/trilha">

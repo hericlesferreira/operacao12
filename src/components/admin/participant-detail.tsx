@@ -297,14 +297,14 @@ export function ParticipantDetail({ participantId }: { participantId: string }) 
               <GenerateTrailButton disabled={!state.anamnese} userId={participantId} />
               {!state.anamnese ? (
                 <p className="mt-3 text-sm text-graphite">
-                  A trilha só pode ser gerada depois que a anamnese for respondida.
+                  A trilha só pode ser gerada depois que o questionário for respondido.
                 </p>
               ) : null}
             </div>
           </Card>
 
           <Card className="bg-white text-coal">
-            <h3 className="text-xl font-bold">Anamnese</h3>
+            <h3 className="text-xl font-bold">Questionário Operação 12S</h3>
             {state.anamnese ? (
               <div className="mt-4 grid gap-4 text-sm text-graphite md:grid-cols-2">
                 <Info label="Idade" value={`${state.anamnese.age} anos`} />
@@ -336,7 +336,7 @@ export function ParticipantDetail({ participantId }: { participantId: string }) 
                 </div>
               </div>
             ) : (
-              <EmptyText text="Anamnese ainda não respondida." />
+              <EmptyText text="Questionário ainda não respondido." />
             )}
           </Card>
         </div>

@@ -13,13 +13,11 @@ import {
   type BiologicalSex
 } from "@/lib/calculations/metabolic";
 import { supabase } from "@/lib/supabase/client";
-import { generateTrailContent } from "@/lib/trail/generator";
 import {
   anamneseSchema,
   calculateAge,
   type AnamneseFormData
 } from "@/schemas/anamnese";
-import type { Json } from "@/types/database";
 
 const draftStorageKey = "operacao12s:anamnese-draft";
 
@@ -227,7 +225,7 @@ export function AnamneseForm() {
     setQuestionIndex((current) => Math.min(current + 1, questions.length - 1));
   }
 
-  async function onSubmit(data: AnamneseFormData) {
+  async function onSubmitFast(data: AnamneseFormData) {
     setFormError(null);
     setIsSubmitting(true);
 
@@ -239,148 +237,29 @@ export function AnamneseForm() {
       }
 
       const {
-        data: { user }
-      } = await supabase.auth.getUser();
+        data: { session }
+      } = await supabase.auth.getSession();
 
-      if (!user) {
+      if (!session) {
         setFormError(
-          "Sua sessão expirou. Faça login novamente para finalizar a anamnese."
+          "Sua sessão expirou. Faça login novamente para finalizar o questionário."
         );
         setIsSubmitting(false);
         return;
       }
 
-      const userAge = calculateAge(data.birthDate);
-      const metabolic = calculateOperation12sMetabolism({
-        biologicalSex: data.biologicalSex,
-        activityLevel: data.activityLevel,
-        age: userAge,
-        weightKg: data.weightKg,
-        heightCm: data.heightCm
+      const response = await fetch("/api/anamnese/submit", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ answers: data })
       });
+      const result = (await response.json()) as { error?: string };
 
-      const {
-        data: { fullName }
-      } = await supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("id", user.id)
-        .single()
-        .then(({ data: profile }) => ({
-          data: { fullName: profile?.full_name ?? user.email ?? "Participante" }
-        }));
-
-      const { data: anamnese, error: anamneseError } = await supabase
-        .from("anamneses")
-        .insert({
-          user_id: user.id,
-          full_name: fullName,
-          age: userAge,
-          biological_sex: data.biologicalSex,
-          weight_kg: data.weightKg,
-          height_cm: data.heightCm,
-          main_goal: data.mainGoals.join(", "),
-          weight_loss_history: data.weightLossHistory || null,
-          main_difficulty: data.mainDifficulties.join(", "),
-          activity_level: data.activityLevel,
-          sleep_hours: data.sleepHours || null,
-          sleep_quality: data.sleepQuality || null,
-          health_conditions: [
-            ...data.healthConditions,
-            ...(data.healthConditionOther ? [`Outro: ${data.healthConditionOther}`] : [])
-          ],
-          food_preference: data.foodPreferences.join(", "),
-          motivation: data.motivation,
-          behavioral_answers: {
-            birthDate: data.birthDate,
-            weekendDifficulty: data.weekendDifficulty,
-            weekendDifficultyReason: data.weekendDifficultyReason || null,
-            sweetsDifficulty: data.sweetsDifficulty,
-            nightHunger: data.nightHunger,
-            activityDescription: data.activityDescription || null,
-            dislikedFoods: data.dislikedFoods || null,
-            foodAllergies: data.foodAllergies,
-            foodAllergyOther: data.foodAllergyOther || null
-          },
-          raw_answers: data,
-          completed_at: new Date().toISOString()
-        })
-        .select("*")
-        .single();
-
-      if (anamneseError || !anamnese) {
-        setFormError(anamneseError?.message ?? "Não foi possível salvar a anamnese.");
-        setIsSubmitting(false);
-        return;
-      }
-
-      const { data: calculation, error: calculationError } = await supabase
-        .from("metabolic_calculations")
-        .insert({
-          user_id: user.id,
-          anamnese_id: anamnese.id,
-          basal_metabolic_rate: metabolic.basalMetabolicRate,
-          total_energy_expenditure: metabolic.totalEnergyExpenditure,
-          activity_factor: metabolic.activityFactor,
-          cut_target_calories: metabolic.cutTargetCalories,
-          indicated_plan_code: metabolic.indicatedPlan?.code ?? null,
-          estimated_deficit: metabolic.estimatedDeficit,
-          review_status: metabolic.reviewRecommended
-            ? "revisao_recomendada"
-            : "sem_revisao",
-          review_reasons: metabolic.reviewReasons
-        })
-        .select("*")
-        .single();
-
-      if (calculationError || !calculation) {
-        setFormError(calculationError?.message ?? "Não foi possível gerar o cálculo metabólico.");
-        setIsSubmitting(false);
-        return;
-      }
-
-      const { data: assessment, error: assessmentError } = await supabase
-        .from("physical_assessments")
-        .upsert({
-          user_id: user.id,
-          week: 0,
-          weight_kg: data.weightKg,
-          neck_cm: data.neckCm,
-          arm_cm: data.armCm,
-          waist_cm: data.waistCm,
-          abdomen_cm: data.abdomenCm,
-          thigh_cm: data.thighCm,
-          calf_cm: data.calfCm
-        }, {
-          onConflict: "user_id,week"
-        })
-        .select("*")
-        .single();
-
-      if (assessmentError || !assessment) {
-        setFormError(assessmentError?.message ?? "Não foi possível salvar a avaliação física.");
-        setIsSubmitting(false);
-        return;
-      }
-
-      const trailContent = generateTrailContent({
-        anamnese,
-        assessment,
-        calculation,
-        curation: null
-      });
-
-      const { error: trailError } = await supabase.from("operation_trails").insert({
-        user_id: user.id,
-        anamnese_id: anamnese.id,
-        calculation_id: calculation.id,
-        priorities: trailContent as unknown as Json,
-        recommended_materials: [],
-        generated_at: new Date().toISOString()
-      });
-
-      if (trailError) {
-        setFormError(trailError.message);
+      if (!response.ok) {
+        setFormError(result.error ?? "Não foi possível finalizar o questionário.");
         setIsSubmitting(false);
         return;
       }
@@ -392,7 +271,7 @@ export function AnamneseForm() {
       setFormError(
         error instanceof Error
           ? error.message
-          : "Não foi possível finalizar a anamnese."
+          : "Não foi possível finalizar o questionário."
       );
       setIsSubmitting(false);
     }
@@ -418,7 +297,7 @@ export function AnamneseForm() {
 
         <form
           className="flex min-h-[calc(100svh-18rem)] flex-col justify-between sm:min-h-[430px]"
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit(onSubmitFast)}
         >
           <div>
             <h2 className="max-w-2xl text-2xl font-bold leading-tight text-coal sm:text-3xl">
@@ -433,6 +312,7 @@ export function AnamneseForm() {
               {currentQuestion.measurement ? (
                 <MeasurementFrame helper={currentQuestion.helper}>
                   <QuestionField
+                    key={currentQuestion.key}
                     questionKey={currentQuestion.key}
                     register={register}
                     values={values}
@@ -440,6 +320,7 @@ export function AnamneseForm() {
                 </MeasurementFrame>
               ) : (
                 <QuestionField
+                  key={currentQuestion.key}
                   questionKey={currentQuestion.key}
                   register={register}
                   values={values}
@@ -478,7 +359,7 @@ export function AnamneseForm() {
               </Button>
             ) : (
               <Button className="w-full sm:w-auto" disabled={isSubmitting} type="submit">
-                {isSubmitting ? "Salvando..." : "Finalizar anamnese"}
+                {isSubmitting ? "Salvando..." : "Finalizar questionário"}
               </Button>
             )}
           </div>

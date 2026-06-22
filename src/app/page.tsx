@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { SessionRedirect } from "@/components/auth/session-redirect";
 
 const inclusions = [
-  "Trilha personalizada gerada pela anamnese",
+  "Trilha personalizada gerada pelo Questionário Operação 12S",
   "Plano alimentar indicado ao perfil",
   "Curadoria do ponto de partida",
   "Prioridades praticas para as 12 semanas",

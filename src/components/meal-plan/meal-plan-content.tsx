@@ -116,11 +116,11 @@ export function MealPlanContent() {
       <Card className="max-w-3xl">
         <h2 className="text-2xl font-bold">Plano ainda não liberado</h2>
         <p className="mt-3 leading-7 text-graphite">
-          Responda a anamnese para gerar a indicação inicial do plano alimentar.
+          Responda o Questionário Operação 12S para gerar a indicação inicial do plano alimentar.
         </p>
         <Link href="/onboarding/anamnese">
           <Button className="mt-6" variant="secondary">
-            Responder anamnese
+            Iniciar Operação 12S
           </Button>
         </Link>
       </Card>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LockKeyhole, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ type ApiResult = {
 };
 
 export function ProfileForm() {
+  const router = useRouter();
   const [state, setState] = useState<ProfileState>({
     loading: true,
     fullName: "",
@@ -83,7 +85,10 @@ export function ProfileForm() {
     setError(null);
     setMessage(null);
 
-    if (state.mustChangePassword && !password) {
+    const needsPasswordChange = state.mustChangePassword || isFirstAccess;
+    const changedPassword = Boolean(password);
+
+    if (needsPasswordChange && !password) {
       setError("Para continuar, crie uma nova senha.");
       return;
     }
@@ -142,6 +147,12 @@ export function ProfileForm() {
     setConfirmPassword("");
     setState((current) => ({ ...current, mustChangePassword: false }));
     window.history.replaceState(null, "", "/perfil");
+
+    if (changedPassword) {
+      window.alert("Senha alterada com sucesso.");
+      router.replace("/dashboard?senhaAlterada=1");
+      router.refresh();
+    }
   }
 
   if (state.loading) {
@@ -208,13 +219,13 @@ export function ProfileForm() {
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="grid gap-1 text-sm">
               <span className="font-semibold text-coal">
-                {state.mustChangePassword ? "Nova senha obrigatória" : "Nova senha"}
+                {state.mustChangePassword || isFirstAccess ? "Nova senha obrigatória" : "Nova senha"}
               </span>
               <Input
                 minLength={6}
                 onChange={(event) => setPassword(event.target.value)}
                 placeholder="Mínimo 6 caracteres"
-                required={state.mustChangePassword}
+                required={state.mustChangePassword || isFirstAccess}
                 type="password"
                 value={password}
               />
@@ -225,7 +236,7 @@ export function ProfileForm() {
               <Input
                 minLength={6}
                 onChange={(event) => setConfirmPassword(event.target.value)}
-                required={state.mustChangePassword || Boolean(password)}
+                required={state.mustChangePassword || isFirstAccess || Boolean(password)}
                 type="password"
                 value={confirmPassword}
               />
@@ -240,7 +251,7 @@ export function ProfileForm() {
               <Save className="mr-2 h-4 w-4" />
               {saving ? "Salvando..." : "Salvar perfil"}
             </Button>
-            {!state.mustChangePassword ? (
+            {!state.mustChangePassword && !isFirstAccess ? (
               <Link href="/dashboard">
                 <Button className="w-full sm:w-auto" variant="ghost">
                   Voltar ao dashboard

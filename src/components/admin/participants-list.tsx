@@ -127,7 +127,7 @@ export function ParticipantsList() {
           <div>
             <h2 className="text-xl font-bold">Listagem de participantes</h2>
             <p className="mt-1 text-sm text-graphite">
-              Veja anamnese, cálculo, plano indicado e avaliação física inicial.
+              Veja questionário, cálculo, plano indicado e avaliação física inicial.
             </p>
           </div>
           <div className="relative md:min-w-80">
@@ -164,7 +164,7 @@ export function ParticipantsList() {
             <div className="hidden grid-cols-[1.3fr_1fr_0.8fr_0.8fr_48px] gap-3 bg-linen px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-graphite md:grid">
               <span>Participante</span>
               <span>WhatsApp</span>
-              <span>Anamnese</span>
+              <span>Questionário</span>
               <span>Plano</span>
               <span />
             </div>
@@ -195,7 +195,7 @@ export function ParticipantsList() {
                 </div>
                 <div>
                   <span className="block text-xs font-bold uppercase tracking-[0.12em] text-graphite/60 md:hidden">
-                    Anamnese
+                    Questionário
                   </span>
                   <span
                     className={
