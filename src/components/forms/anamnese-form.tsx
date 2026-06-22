@@ -386,7 +386,7 @@ export function AnamneseForm() {
       }
 
       window.localStorage.removeItem(draftStorageKey);
-      router.push("/dashboard");
+      router.push("/dashboard?anamnese=concluida");
       router.refresh();
     } catch (error) {
       setFormError(

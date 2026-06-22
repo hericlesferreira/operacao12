@@ -122,6 +122,23 @@ export function DashboardContent() {
     void loadDashboard();
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get("anamnese") !== "concluida") {
+      return;
+    }
+
+    window.alert(
+      "Anamnese concluída com sucesso!\n\nSeu plano alimentar e sua trilha da Operação já foram liberados automaticamente.\n\nVocê já pode seguir este plano e esta trilha, mas eles ainda podem sofrer alterações pois estão pendentes de aprovação do nutri."
+    );
+
+    params.delete("anamnese");
+    const nextSearch = params.toString();
+    const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}`;
+    window.history.replaceState(null, "", nextUrl);
+  }, []);
+
   const selectedPlanCode =
     state.curation?.approvedPlanCode ?? state.calculation?.indicatedPlanCode;
   const plan =
