@@ -142,7 +142,7 @@ export function MealPlanContent() {
           Depois, substituímos esses arquivos pelos PDFs finais.
         </p>
         <a href={plan.pdfUrl} rel="noreferrer" target="_blank">
-          <Button className="mt-6 bg-lime text-coal hover:bg-lime/80">
+          <Button className="mt-6" variant="secondary">
             <Download className="mr-2 h-4 w-4" />
             Abrir PDF do plano
           </Button>
