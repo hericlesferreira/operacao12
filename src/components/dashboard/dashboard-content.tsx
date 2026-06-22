@@ -148,7 +148,7 @@ export function DashboardContent() {
     }
 
     window.alert(
-      "Questionário Operação 12S concluído com sucesso!\n\nSeu plano alimentar e sua trilha da Operação já foram liberados automaticamente.\n\nVocê já pode seguir este plano e esta trilha, mas eles ainda podem sofrer alterações pois estão pendentes de aprovação do nutri."
+      "Questionário Operação 12S concluído com sucesso!\n\nSeu plano alimentar e seu Mapa da Operação já foram liberados automaticamente.\n\nVocê já pode seguir este plano e este mapa, mas eles ainda podem sofrer alterações pois estão pendentes de aprovação do nutri."
     );
 
     window.sessionStorage.removeItem("operacao12s:anamnese-completed");
@@ -229,7 +229,7 @@ export function DashboardContent() {
           <p className="mt-3 max-w-2xl leading-7 text-graphite">
             {state.hasAnamnese
               ? "Seu Questionário Operação 12S foi registrado. A equipe vai revisar a curadoria antes da entrega final do plano."
-              : "O próximo passo é concluir o Questionário Operação 12S para gerar cálculos, plano indicado e trilha da operação."}
+              : "O próximo passo é concluir o Questionário Operação 12S para gerar cálculos, plano indicado e Mapa da Operação."}
           </p>
           <Link href="/onboarding/anamnese">
             <Button className="mt-6" variant="secondary">
@@ -240,21 +240,21 @@ export function DashboardContent() {
 
         <Card>
           <FileDown className="h-8 w-8 text-cocoa" />
-          <h2 className="mt-4 text-xl font-bold">Trilha da Operação</h2>
+          <h2 className="mt-4 text-xl font-bold">Mapa da Operação</h2>
           <p className="mt-2 text-sm leading-6 text-graphite">
             {state.hasTrail
-              ? "Sua trilha inicial já está disponível com ponto de partida, estratégia alimentar e prioridades."
+              ? "Seu Mapa da Operação inicial já está disponível com ponto de partida, estratégia alimentar e prioridades."
               : state.hasAnamnese
-                ? "A próxima etapa é a equipe liberar sua trilha com ponto de partida, estratégia alimentar e prioridades."
-                : "A trilha será liberada depois do questionário e dos cálculos."}
+                ? "A próxima etapa é a equipe liberar seu Mapa da Operação com ponto de partida, estratégia alimentar e prioridades."
+                : "O Mapa da Operação será liberado depois do questionário e dos cálculos."}
           </p>
           {state.hasTrail ? (
             <Link href="/trilha">
-              <Button className="mt-5 w-full">Ver trilha</Button>
+              <Button className="mt-5 w-full">Ver mapa</Button>
             </Link>
           ) : (
             <Button className="mt-5 w-full" disabled>
-              Trilha em preparo
+              Mapa em preparo
             </Button>
           )}
         </Card>

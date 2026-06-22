@@ -35,9 +35,9 @@ export function generateTrailContent({
       : null;
 
   return {
-    headline: `Trilha da Operação 12S de ${anamnese.full_name}`,
+    headline: `Mapa da Operação 12S de ${anamnese.full_name}`,
     summary:
-      "Esta trilha organiza seu ponto de partida, sua estratégia alimentar inicial e as prioridades práticas para as próximas 12 semanas.",
+      "Este mapa organiza seu ponto de partida, sua estratégia alimentar inicial e as prioridades práticas para as próximas 12 semanas.",
     startingPoint: [
       { label: "Objetivos", value: anamnese.main_goal },
       { label: "O que mais atrapalha", value: anamnese.main_difficulty ?? "-" },
@@ -119,7 +119,7 @@ function buildAttentionPoints(
   }
 
   if (curation?.status === "revisar") {
-    points.push("A equipe marcou esta trilha para revisão manual antes da entrega final.");
+    points.push("A equipe marcou este mapa para revisão manual antes da entrega final.");
   }
 
   return points;

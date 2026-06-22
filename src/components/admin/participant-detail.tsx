@@ -274,7 +274,7 @@ export function ParticipantDetail({ participantId }: { participantId: string }) 
           </Card>
 
           <Card className="bg-white text-coal">
-            <h3 className="text-xl font-bold">Trilha da Operação</h3>
+            <h3 className="text-xl font-bold">Mapa da Operação</h3>
             <p className="mt-2 text-sm text-graphite">
               Gere a página de entrega com ponto de partida, estratégia alimentar,
               prioridades e medidas iniciais do participante.
@@ -282,7 +282,7 @@ export function ParticipantDetail({ participantId }: { participantId: string }) 
             <div className="mt-4 grid gap-3 text-sm text-graphite md:grid-cols-2">
               <Info
                 label="Status"
-                value={state.trail ? "Trilha gerada" : "Ainda não gerada"}
+                value={state.trail ? "Mapa gerado" : "Ainda não gerado"}
               />
               <Info
                 label="Última geração"
@@ -297,7 +297,7 @@ export function ParticipantDetail({ participantId }: { participantId: string }) 
               <GenerateTrailButton disabled={!state.anamnese} userId={participantId} />
               {!state.anamnese ? (
                 <p className="mt-3 text-sm text-graphite">
-                  A trilha só pode ser gerada depois que o questionário for respondido.
+                  O mapa só pode ser gerado depois que o questionário for respondido.
                 </p>
               ) : null}
             </div>

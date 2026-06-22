@@ -99,19 +99,19 @@ export function TrailView() {
 
   const isApproved = state.curationStatus === "aprovado" && Boolean(state.approvedPlanCode);
   const approvalMessage = isApproved
-    ? "Plano e trilha aprovados pelo nutri."
-    : "Você já pode seguir este plano e esta trilha, mas eles ainda podem sofrer alterações pois estão pendentes de aprovação do nutri.";
+    ? "Plano e Mapa da Operação aprovados pelo nutri."
+    : "Você já pode seguir este plano e este mapa, mas eles ainda podem sofrer alterações pois estão pendentes de aprovação do nutri.";
 
   if (state.loading) {
-    return <Card>Carregando sua trilha...</Card>;
+    return <Card>Carregando seu mapa...</Card>;
   }
 
   if (!state.content) {
     return (
       <Card className="max-w-3xl">
-        <h2 className="text-2xl font-bold">Sua trilha ainda está em preparo</h2>
+        <h2 className="text-2xl font-bold">Seu Mapa da Operação ainda está em preparo</h2>
         <p className="mt-3 leading-7 text-graphite">
-          Depois do Questionário Operação 12S, sua Trilha da Operação será liberada aqui.
+          Depois do Questionário Operação 12S, seu Mapa da Operação será liberado aqui.
         </p>
         <Link href="/dashboard">
           <Button className="mt-6" variant="secondary">
@@ -126,7 +126,7 @@ export function TrailView() {
     <div className="grid gap-5">
       <Card className="bg-coal text-white">
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-lime">
-          Trilha da Operação 12S
+          Mapa da Operação 12S
         </p>
         <h2 className="mt-3 max-w-4xl text-2xl font-bold sm:text-3xl">
           {state.content.headline}
@@ -144,7 +144,7 @@ export function TrailView() {
 
       <Card className="overflow-hidden bg-linen">
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-cocoa">
-          Mapa da operação
+          Mapa da Operação
         </p>
         <h3 className="mt-2 text-2xl font-bold">Seu caminho inicial</h3>
         <div className="mt-6 grid gap-4 md:grid-cols-4">
@@ -301,14 +301,37 @@ function parseTrailContent(value: Json | null): TrailContent | null {
   }
 
   return {
-    headline: candidate.headline,
-    summary: candidate.summary,
-    startingPoint: candidate.startingPoint,
-    eatingStrategy: candidate.eatingStrategy,
-    priorities: candidate.priorities,
-    attentionPoints: candidate.attentionPoints,
+    headline: renameTrailText(candidate.headline),
+    summary: renameTrailText(candidate.summary),
+    startingPoint: candidate.startingPoint.map(renameTrailItem),
+    eatingStrategy: candidate.eatingStrategy.map(renameTrailText),
+    priorities: candidate.priorities.map(renameTrailText),
+    attentionPoints: candidate.attentionPoints.map(renameTrailText),
     initialAssessment: candidate.initialAssessment
   };
+}
+
+function renameTrailItem(item: TrailItem) {
+  return {
+    label: renameTrailText(item.label),
+    value: renameTrailText(item.value)
+  };
+}
+
+function renameTrailText(value: string) {
+  return value
+    .replaceAll("sua Trilha da Operação", "seu Mapa da Operação")
+    .replaceAll("sua trilha da Operação", "seu Mapa da Operação")
+    .replaceAll("Trilha da Operação", "Mapa da Operação")
+    .replaceAll("trilha da Operação", "Mapa da Operação")
+    .replaceAll("Esta trilha", "Este mapa")
+    .replaceAll("esta trilha", "este mapa")
+    .replaceAll("Sua trilha", "Seu mapa")
+    .replaceAll("sua trilha", "seu mapa")
+    .replaceAll("A trilha", "O mapa")
+    .replaceAll("a trilha", "o mapa")
+    .replaceAll("Trilha", "Mapa")
+    .replaceAll("trilha", "mapa");
 }
 
 function isStringList(value: Json | undefined): value is string[] {

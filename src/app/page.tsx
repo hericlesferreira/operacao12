@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { SessionRedirect } from "@/components/auth/session-redirect";
 
 const inclusions = [
-  "Trilha personalizada gerada pelo Questionário Operação 12S",
+  "Mapa da Operação gerado pelo Questionário Operação 12S",
   "Plano alimentar indicado ao perfil",
   "Curadoria do ponto de partida",
   "Prioridades praticas para as 12 semanas",
@@ -29,7 +29,7 @@ export default function HomePage() {
             recomecando.
           </p>
           <p className="mt-4 max-w-2xl leading-7 text-graphite">
-            Receba uma trilha personalizada, um plano alimentar direcionado ao
+            Receba um mapa personalizado, um plano alimentar direcionado ao
             seu perfil e uma direcao clara para executar as proximas 12 semanas.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">

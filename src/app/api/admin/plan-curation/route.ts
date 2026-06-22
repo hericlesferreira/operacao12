@@ -121,13 +121,13 @@ export async function POST(request: Request) {
 
       if (trailError) {
         return NextResponse.json(
-          { error: `Curadoria salva, mas a trilha não foi atualizada: ${trailError.message}` },
+          { error: `Curadoria salva, mas o mapa não foi atualizado: ${trailError.message}` },
           { status: 400 }
         );
       }
     }
 
-    return NextResponse.json({ message: "Curadoria salva e trilha atualizada." });
+    return NextResponse.json({ message: "Curadoria salva e mapa atualizado." });
   } catch (error) {
     return NextResponse.json(
       {

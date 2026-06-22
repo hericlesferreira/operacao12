@@ -3,7 +3,7 @@ import { TrailView } from "@/components/trail/trail-view";
 
 export default function TrailPage() {
   return (
-    <AppShell title="Trilha da Operação">
+    <AppShell title="Mapa da Operação">
       <TrailView />
     </AppShell>
   );

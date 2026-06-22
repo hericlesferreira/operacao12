@@ -60,14 +60,14 @@ export function GenerateTrailButton({ userId, disabled }: GenerateTrailButtonPro
       setStatus({
         loading: false,
         message: null,
-        error: data.error ?? "Não foi possível gerar a trilha."
+        error: data.error ?? "Não foi possível gerar o mapa."
       });
       return;
     }
 
     setStatus({
       loading: false,
-      message: data.message ?? "Trilha gerada com sucesso.",
+      message: data.message ?? "Mapa gerado com sucesso.",
       error: null
     });
   }
@@ -76,7 +76,7 @@ export function GenerateTrailButton({ userId, disabled }: GenerateTrailButtonPro
     <div>
       <Button disabled={disabled || status.loading} onClick={handleGenerate}>
         <RefreshCw className="mr-2 h-4 w-4" />
-        {status.loading ? "Gerando trilha..." : "Gerar trilha da Operação"}
+        {status.loading ? "Gerando mapa..." : "Gerar Mapa da Operação"}
       </Button>
       {status.message ? (
         <p className="mt-3 text-sm font-medium text-green-700">{status.message}</p>

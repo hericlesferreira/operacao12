@@ -10,7 +10,7 @@ import {
 
 export const participantNavigation = [
   { label: "Dashboard", href: "/dashboard", icon: Home },
-  { label: "Trilha", href: "/trilha", icon: Route },
+  { label: "Mapa", href: "/trilha", icon: Route },
   { label: "Plano", href: "/plano-alimentar", icon: Utensils },
   { label: "Avaliações", href: "/avaliacoes", icon: BarChart3 },
   { label: "Perfil", href: "/perfil", icon: User }

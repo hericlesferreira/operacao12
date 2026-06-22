@@ -193,7 +193,7 @@ export function NutritionReviewPanel() {
           <h2 className="mt-1 text-xl font-bold">Revisão de indicações</h2>
           <p className="mt-2 text-sm leading-6 text-graphite">
             Aprove a indicação automática ou troque a faixa calórica antes de
-            marcar plano e trilha como revisados.
+            marcar plano e mapa como revisados.
           </p>
         </div>
         <div className="grid grid-cols-2 gap-2 text-sm sm:min-w-56">

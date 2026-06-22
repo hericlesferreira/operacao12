@@ -400,7 +400,7 @@ function buildQuestions(values: Partial<AnamneseFormData>): Question[] {
     { key: "biologicalSex", title: "Qual é o seu sexo?", fields: ["biologicalSex"] },
     { key: "mainGoals", title: "Quais são seus principais objetivos?", helper: "Selecione todas as opções que fazem sentido para você.", fields: ["mainGoals"] },
     { key: "mainDifficulties", title: "O que mais te atrapalha hoje?", helper: "Selecione todas as opções que fazem sentido para sua rotina.", fields: ["mainDifficulties"] },
-    { key: "weightLossHistory", title: "Me conte mais sobre você e sua história com emagrecimento.", helper: "Fique à vontade para compartilhar seu contexto. Este campo ajuda a deixar a trilha mais humana.", fields: ["weightLossHistory"] },
+    { key: "weightLossHistory", title: "Me conte mais sobre você e sua história com emagrecimento.", helper: "Fique à vontade para compartilhar seu contexto. Este campo ajuda a deixar o mapa mais humano.", fields: ["weightLossHistory"] },
     { key: "activityLevel", title: "Como está sua rotina de atividade física?", fields: ["activityLevel"] }
   ];
 

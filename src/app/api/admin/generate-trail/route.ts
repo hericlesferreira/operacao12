@@ -102,20 +102,20 @@ export async function POST(request: Request) {
 
     if (error || !trail) {
       return NextResponse.json(
-        { error: error?.message ?? "Não foi possível gerar a trilha." },
+        { error: error?.message ?? "Não foi possível gerar o mapa." },
         { status: 400 }
       );
     }
 
     return NextResponse.json({
       trailId: trail.id,
-      message: "Trilha gerada com sucesso."
+      message: "Mapa gerado com sucesso."
     });
   } catch (error) {
     return NextResponse.json(
       {
         error:
-          error instanceof Error ? error.message : "Erro inesperado ao gerar trilha."
+          error instanceof Error ? error.message : "Erro inesperado ao gerar mapa."
       },
       { status: 500 }
     );

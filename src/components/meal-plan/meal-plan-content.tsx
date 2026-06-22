@@ -104,8 +104,8 @@ export function MealPlanContent() {
   const isApproved = state.curationStatus === "aprovado" && Boolean(state.approvedPlanCode);
   const sourceLabel = isApproved ? "Plano aprovado pelo nutri" : "Plano indicado automaticamente";
   const approvalMessage = isApproved
-    ? "Plano e trilha aprovados pelo nutri."
-    : "Você já pode seguir este plano e esta trilha, mas eles ainda podem sofrer alterações pois estão pendentes de aprovação do nutri.";
+    ? "Plano e Mapa da Operação aprovados pelo nutri."
+    : "Você já pode seguir este plano e este mapa, mas eles ainda podem sofrer alterações pois estão pendentes de aprovação do nutri.";
 
   if (state.loading) {
     return <Card>Carregando plano alimentar...</Card>;
