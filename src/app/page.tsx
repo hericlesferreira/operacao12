@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { SessionRedirect } from "@/components/auth/session-redirect";
 
 const inclusions = [
   "Trilha personalizada gerada pela anamnese",
@@ -14,6 +15,7 @@ const inclusions = [
 export default function HomePage() {
   return (
     <main className="bg-paper text-coal">
+      <SessionRedirect />
       <section className="mx-auto grid min-h-screen max-w-6xl items-center gap-10 px-4 py-16 md:grid-cols-[1.1fr_0.9fr] md:px-8">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cocoa">
