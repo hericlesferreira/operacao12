@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { LogOut } from "lucide-react";
 import { adminNavigation } from "@/constants/navigation";
-import { Button } from "@/components/ui/button";
+import { LogoutButton } from "@/components/auth/logout-button";
 import { supabase } from "@/lib/supabase/client";
 
 type AdminShellProps = {
@@ -102,10 +101,7 @@ export function AdminShell({ children, title }: AdminShellProps) {
                 {title}
               </h1>
             </div>
-            <Button className="hidden sm:inline-flex" variant="ghost">
-              <LogOut className="mr-2 h-4 w-4" />
-              Sair
-            </Button>
+            <LogoutButton className="hidden sm:inline-flex" />
           </div>
         </header>
         <main className="px-4 py-6 md:px-8">{children}</main>

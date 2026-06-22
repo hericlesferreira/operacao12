@@ -1,7 +1,6 @@
 import Link from "next/link";
-import { LogOut } from "lucide-react";
 import { participantNavigation } from "@/constants/navigation";
-import { Button } from "@/components/ui/button";
+import { LogoutButton } from "@/components/auth/logout-button";
 
 type AppShellProps = {
   children: React.ReactNode;
@@ -42,10 +41,7 @@ export function AppShell({ children, title, eyebrow = "Operacao 12S" }: AppShell
                 {title}
               </h1>
             </div>
-            <Button className="hidden sm:inline-flex" variant="ghost">
-              <LogOut className="mr-2 h-4 w-4" />
-              Sair
-            </Button>
+            <LogoutButton className="hidden sm:inline-flex" />
           </div>
         </header>
         <main className="px-4 py-6 md:px-8">{children}</main>

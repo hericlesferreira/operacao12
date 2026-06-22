@@ -82,7 +82,7 @@ export function AuthCard({ mode, signupAccessCode }: AuthCardProps) {
       return;
     }
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password
     });
@@ -93,17 +93,13 @@ export function AuthCard({ mode, signupAccessCode }: AuthCardProps) {
       return;
     }
 
-    const {
-      data: { user }
-    } = await supabase.auth.getUser();
-
-    if (user) {
-      router.push(await getPostLoginRedirectPath(user.id));
+    if (signInData.user) {
+      router.replace(await getPostLoginRedirectPath(signInData.user.id));
       router.refresh();
       return;
     }
 
-    router.push("/dashboard");
+    router.replace("/dashboard");
     router.refresh();
   }
 
