@@ -344,6 +344,13 @@ function buildFocusRecommendations(signals: TrailSignals): FocusRecommendation[]
 
   recommendations.push(
     {
+      id: "routine-base",
+      title: "Rotina base",
+      badge: "Rotina",
+      description: "Transforme o plano em uma rotina simples de executar, com refeições principais previsíveis e poucos pontos de decisão.",
+      priority: "Criar uma rotina base para as refeições principais da semana."
+    },
+    {
       id: "consistency",
       title: "Consistência",
       badge: "Foco",
@@ -356,6 +363,13 @@ function buildFocusRecommendations(signals: TrailSignals): FocusRecommendation[]
       badge: "Plano",
       description: "Organize compras, refeições principais e opções de emergência para não depender de força de vontade todos os dias.",
       priority: "Ter opções de emergência para quando a rotina sair do ideal."
+    },
+    {
+      id: "return",
+      title: "Retomada",
+      badge: "Voltar",
+      description: "Aprenda a retomar rapidamente depois de um dia fora do plano, sem compensações extremas e sem abandonar a operação.",
+      priority: "Definir uma regra de retomada para quando sair do plano."
     }
   );
 

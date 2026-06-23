@@ -95,4 +95,28 @@ describe("generateTrailContent", () => {
     expect(content.mapSteps[1].title).toBe("Treino");
     expect(content.mapSteps[1].description).toContain("musculação");
   });
+
+  it("always returns one map step for each of the 12 weeks", () => {
+    const content = generateTrailContent({
+      anamnese: {
+        ...baseAnamnese,
+        main_difficulty: null,
+        motivation: 9,
+        behavioral_answers: {
+          ...baseAnamnese.behavioral_answers,
+          nightHunger: "nao",
+          sweetsDifficulty: "nao",
+          weekendDifficulty: "nao"
+        }
+      } as unknown as TestAnamnese,
+      assessment: null,
+      calculation: calculation as unknown as TestCalculation,
+      curation: null
+    });
+
+    expect(content.mapSteps).toHaveLength(12);
+    expect(content.mapSteps.map((step) => step.week)).toEqual([
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12
+    ]);
+  });
 });

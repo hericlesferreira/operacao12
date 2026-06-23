@@ -266,6 +266,10 @@ function OperationMap({
       <h3 className="mt-2 max-w-lg text-3xl font-black leading-tight sm:text-4xl">
         Este é o mapa da sua operação 12S
       </h3>
+      <p className="mt-3 max-w-xl text-sm font-semibold leading-6 text-graphite">
+        São 12 semanas de execução, com uma aula liberada por semana e a etapa atual
+        destacada no mapa.
+      </p>
 
       <div className="mt-8 grid gap-0">
         {steps.map((step, index) => {
@@ -298,7 +302,7 @@ function OperationMap({
               <div className="min-w-0 pt-1 sm:pt-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <h4 className="text-2xl font-black leading-tight text-coal sm:text-3xl">
-                    Semana {step.week} - {step.title}
+                    Semana {step.week} / Aula {step.week} - {step.title}
                   </h4>
                   {isActive ? (
                     <span className="rounded-full bg-lime px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-coal">
@@ -336,39 +340,101 @@ function OperationMap({
 }
 
 function buildFallbackMapSteps(content: TrailContent): TrailMapStep[] {
+  const planDescription =
+    content.startingPoint.find((item) => item.label === "Plano alimentar")?.value ??
+    "Comece pelo plano alimentar indicado para organizar o ponto de partida.";
+  const firstStrategy =
+    content.eatingStrategy[0] ?? "Transforme o plano em uma rotina simples de executar.";
+  const firstPriority =
+    content.priorities[0] ?? "Priorize as ações mais importantes para manter consistência.";
+  const hasAssessment = content.initialAssessment.length > 0;
+
   return [
     {
       week: 1,
       title: "Dieta",
       badge: "Dieta",
-      description:
-        content.startingPoint.find((item) => item.label === "Plano alimentar")?.value ??
-        "Comece pelo plano alimentar indicado para organizar o ponto de partida.",
+      description: planDescription,
       actions: [{ label: "Abrir plano alimentar", href: "/plano-alimentar" }]
     },
     {
       week: 2,
       title: "Rotina",
       badge: "Rotina",
-      description: content.eatingStrategy[0] ?? "Transforme o plano em uma rotina simples de executar.",
+      description: firstStrategy,
       actions: [{ label: "Ver estratégia", href: "/trilha#prioridades" }]
     },
     {
       week: 3,
       title: "Foco",
       badge: "Foco",
-      description: content.priorities[0] ?? "Priorize as ações mais importantes para manter consistência.",
+      description: firstPriority,
       actions: [{ label: "Ver prioridades", href: "/trilha#prioridades" }]
     },
     {
       week: 4,
-      title: "Evolução",
+      title: "Execução",
+      badge: "Ação",
+      description: "Repita o básico da semana anterior e reduza os principais atritos da rotina alimentar.",
+      actions: [{ label: "Ver prioridades", href: "/trilha#prioridades" }]
+    },
+    {
+      week: 5,
+      title: "Medidas",
       badge: "Medidas",
-      description:
-        content.initialAssessment.length > 0
-          ? "Use as medidas iniciais como referência para comparar progresso."
-          : "Registre medidas para acompanhar progresso real.",
+      description: hasAssessment
+        ? "Use as medidas iniciais como referência para comparar progresso."
+        : "Registre medidas para acompanhar progresso real.",
       actions: [{ label: "Ver avaliação física", href: "/avaliacoes" }]
+    },
+    {
+      week: 6,
+      title: "Sono",
+      badge: "Sono",
+      description: "Ajuste rotina noturna, horários e escolhas do fim do dia para melhorar adesão ao plano.",
+      actions: [{ label: "Ver prioridades", href: "/trilha#prioridades" }]
+    },
+    {
+      week: 7,
+      title: "Fim de semana",
+      badge: "Social",
+      description: "Prepare uma estratégia para atravessar final de semana, eventos e refeições fora da rotina.",
+      actions: [{ label: "Ver estratégia", href: "/trilha#prioridades" }]
+    },
+    {
+      week: 8,
+      title: "Consistência",
+      badge: "Foco",
+      description: "Consolide o que funcionou e repita as ações mais importantes com menos esforço mental.",
+      actions: [{ label: "Ver prioridades", href: "/trilha#prioridades" }]
+    },
+    {
+      week: 9,
+      title: "Ajuste fino",
+      badge: "Ajuste",
+      description: "Refine horários, porções e escolhas para manter o plano possível na vida real.",
+      actions: [{ label: "Rever plano", href: "/plano-alimentar" }]
+    },
+    {
+      week: 10,
+      title: "Autonomia",
+      badge: "Autonomia",
+      description: "Pratique substituições, retomadas e escolhas fora do ideal sem perder a direção.",
+      actions: [{ label: "Ver mapa", href: "/trilha" }]
+    },
+    {
+      week: 11,
+      title: "Revisão",
+      badge: "Revisão",
+      description: "Revise evolução, dificuldades e pontos que ainda precisam de atenção antes do fechamento.",
+      actions: [{ label: "Ver avaliação física", href: "/avaliacoes" }]
+    },
+    {
+      week: 12,
+      title: "Consolidação",
+      badge: "12S",
+      description: "Feche a operação revisando aprendizados, medidas e próximos passos do novo ciclo.",
+      actions: [{ label: "Ver avaliação final", href: "/avaliacoes" }]
     }
   ];
 }
