@@ -9,11 +9,20 @@ type PlanCuration = Database["public"]["Tables"]["plan_curations"]["Row"];
 export type TrailContent = {
   headline: string;
   summary: string;
+  mapSteps: TrailMapStep[];
   startingPoint: Array<{ label: string; value: string }>;
   eatingStrategy: string[];
   priorities: string[];
   attentionPoints: string[];
   initialAssessment: Array<{ label: string; value: string }>;
+};
+
+export type TrailMapStep = {
+  week: number;
+  title: string;
+  badge: string;
+  description: string;
+  actions: Array<{ label: string; href: string }>;
 };
 
 export function generateTrailContent({
@@ -38,6 +47,7 @@ export function generateTrailContent({
     headline: `Mapa da Operação 12S de ${anamnese.full_name}`,
     summary:
       "Este mapa organiza seu ponto de partida, sua estratégia alimentar inicial e as prioridades práticas para as próximas 12 semanas.",
+    mapSteps: buildMapSteps(anamnese, plan?.title ?? null),
     startingPoint: [
       { label: "Objetivos", value: anamnese.main_goal },
       { label: "O que mais atrapalha", value: anamnese.main_difficulty ?? "-" },
@@ -74,6 +84,79 @@ export function generateTrailContent({
         ]
       : []
   };
+}
+
+function buildMapSteps(anamnese: Anamnese, planTitle: string | null): TrailMapStep[] {
+  const text = `${anamnese.main_difficulty ?? ""} ${JSON.stringify(
+    anamnese.behavioral_answers
+  )}`.toLowerCase();
+  const activityTitle = anamnese.activity_level === "sedentario" ? "Movimento" : "Treino";
+  const activityDescription =
+    anamnese.activity_level === "sedentario"
+      ? "Com o plano alimentar encaminhado, comece com uma rotina simples de movimento para ajudar o metabolismo sem depender de perfeição."
+      : "Alimentação encaminhada. Agora vamos encaixar sua atividade física de forma consistente para acelerar o processo.";
+  const sleepNeedsAttention =
+    anamnese.sleep_quality === "regular" ||
+    anamnese.sleep_quality === "ruim" ||
+    (anamnese.sleep_hours?.includes("5") ?? false) ||
+    (anamnese.sleep_hours?.includes("6") ?? false);
+  const behaviorTitle = text.includes("final") || text.includes("evento")
+    ? "Fim de semana"
+    : text.includes("doce")
+      ? "Doces"
+      : text.includes("noite")
+        ? "Noite"
+        : "Consistência";
+  const behaviorDescription = buildBehaviorDescription(text);
+
+  return [
+    {
+      week: 1,
+      title: "Dieta",
+      badge: "Dieta",
+      description: `Este é o momento de ajustar o que mais te trava na alimentação. ${planTitle ? `Use o ${planTitle} como guia inicial` : "Use o plano alimentar como guia inicial"} por 7 dias.`,
+      actions: [{ label: "Abrir plano alimentar", href: "/plano-alimentar" }]
+    },
+    {
+      week: 2,
+      title: activityTitle,
+      badge: activityTitle,
+      description: activityDescription,
+      actions: [{ label: "Ver prioridades", href: "/trilha#prioridades" }]
+    },
+    {
+      week: 3,
+      title: sleepNeedsAttention ? "Sono" : "Rotina",
+      badge: sleepNeedsAttention ? "Sono" : "Rotina",
+      description: sleepNeedsAttention
+        ? "Um sono ruim atrasa seus resultados. Ajuste horários, fome à noite e rotina para melhorar adesão ao plano."
+        : "Com alimentação e movimento encaminhados, vamos proteger sua rotina para manter constância nos dias corridos.",
+      actions: [{ label: sleepNeedsAttention ? "Ver foco do sono" : "Ver estratégia", href: "/trilha#prioridades" }]
+    },
+    {
+      week: 4,
+      title: behaviorTitle,
+      badge: "Foco",
+      description: behaviorDescription,
+      actions: [{ label: "Ver avaliação física", href: "/avaliacoes" }]
+    }
+  ];
+}
+
+function buildBehaviorDescription(text: string) {
+  if (text.includes("final") || text.includes("evento")) {
+    return "Agora o foco é atravessar finais de semana e eventos sociais sem transformar uma refeição fora da rota em abandono.";
+  }
+
+  if (text.includes("doce")) {
+    return "Vamos criar uma estratégia para vontade de doces, mantendo previsibilidade e evitando o ciclo de restrição e exagero.";
+  }
+
+  if (text.includes("noite")) {
+    return "O foco é reduzir fome ou vontade de comer à noite, ajustando distribuição alimentar e rotina do fim do dia.";
+  }
+
+  return "Esta etapa consolida o básico: repetir o que funcionou, reduzir atritos e manter execução possível na vida real.";
 }
 
 function buildPriorities(anamnese: Anamnese) {

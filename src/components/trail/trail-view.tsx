@@ -14,9 +14,23 @@ type TrailItem = {
   value: string;
 };
 
+type TrailMapAction = {
+  label: string;
+  href: string;
+};
+
+type TrailMapStep = {
+  week: number;
+  title: string;
+  badge: string;
+  description: string;
+  actions: TrailMapAction[];
+};
+
 type TrailContent = {
   headline: string;
   summary: string;
+  mapSteps: TrailMapStep[];
   startingPoint: TrailItem[];
   eatingStrategy: string[];
   priorities: string[];
@@ -142,28 +156,7 @@ export function TrailView() {
         ) : null}
       </Card>
 
-      <Card className="overflow-hidden bg-linen">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-cocoa">
-          Mapa da Operação
-        </p>
-        <h3 className="mt-2 text-2xl font-bold">Seu caminho inicial</h3>
-        <div className="mt-6 grid gap-4 md:grid-cols-4">
-          {buildTrailSteps(state.content).map((step, index) => (
-            <div className="relative" key={step.title}>
-              {index < 3 ? (
-                <div className="absolute left-8 top-7 hidden h-px w-[calc(100%+1rem)] bg-cocoa/25 md:block" />
-              ) : null}
-              <div className="relative rounded-lg border border-coal/10 bg-white p-4 shadow-sm">
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-coal text-sm font-bold text-lime">
-                  {index + 1}
-                </span>
-                <h4 className="mt-4 font-bold text-coal">{step.title}</h4>
-                <p className="mt-2 text-sm leading-6 text-graphite">{step.description}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
+      <OperationMap content={state.content} generatedAt={state.generatedAt} />
 
       <div className="grid gap-5 lg:grid-cols-[1fr_0.8fr]">
         <Card>
@@ -188,7 +181,7 @@ export function TrailView() {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <Card>
+        <Card className="scroll-mt-24" id="prioridades">
           <div className="flex items-center gap-3">
             <CheckCircle2 className="h-6 w-6 text-cocoa" />
             <h3 className="text-xl font-bold">Prioridades práticas</h3>
@@ -255,30 +248,166 @@ function NumberedList({ items }: { items: string[] }) {
   );
 }
 
-function buildTrailSteps(content: TrailContent) {
+function OperationMap({
+  content,
+  generatedAt
+}: {
+  content: TrailContent;
+  generatedAt: string | null;
+}) {
+  const steps = content.mapSteps.length ? content.mapSteps : buildFallbackMapSteps(content);
+  const activeIndex = getActiveStepIndex(steps, generatedAt);
+
+  return (
+    <Card className="overflow-hidden bg-white">
+      <p className="text-sm font-semibold uppercase tracking-[0.18em] text-cocoa">
+        Mapa da Operação
+      </p>
+      <h3 className="mt-2 max-w-lg text-3xl font-black leading-tight sm:text-4xl">
+        Este é o mapa da sua operação 12S
+      </h3>
+
+      <div className="mt-8 grid gap-0">
+        {steps.map((step, index) => {
+          const isActive = index === activeIndex;
+          const isCompleted = index < activeIndex;
+          const isLast = index === steps.length - 1;
+
+          return (
+            <div
+              className="relative grid grid-cols-[76px_1fr] gap-5 pb-10 last:pb-0 sm:grid-cols-[96px_1fr] sm:gap-7"
+              key={`${step.week}-${step.title}`}
+            >
+              {!isLast ? (
+                <div className="absolute left-[37px] top-20 h-[calc(100%-5rem)] border-l-2 border-dashed border-coal/60 sm:left-[47px]" />
+              ) : null}
+
+              <div
+                className={[
+                  "relative z-10 flex h-[76px] w-[76px] items-center justify-center rounded-full text-center text-sm font-black shadow-sm sm:h-24 sm:w-24 sm:text-lg",
+                  isActive
+                    ? "bg-coal text-lime ring-4 ring-lime/70"
+                    : isCompleted
+                      ? "bg-lime text-coal"
+                      : "bg-lime/70 text-coal"
+                ].join(" ")}
+              >
+                {step.badge}
+              </div>
+
+              <div className="min-w-0 pt-1 sm:pt-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h4 className="text-2xl font-black leading-tight text-coal sm:text-3xl">
+                    Semana {step.week} - {step.title}
+                  </h4>
+                  {isActive ? (
+                    <span className="rounded-full bg-lime px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-coal">
+                      Você está aqui
+                    </span>
+                  ) : null}
+                </div>
+                <p className="mt-1 text-xs font-semibold text-graphite/70">
+                  {formatMapStepDate(generatedAt, step.week)}
+                </p>
+                <p className="mt-2 max-w-xl text-sm leading-5 text-coal sm:text-base sm:leading-6">
+                  {step.description}
+                </p>
+
+                {step.actions.length ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {step.actions.map((action) => (
+                      <Link
+                        className="rounded-lg bg-lime px-3 py-2 text-xs font-black text-coal transition hover:bg-lime/80"
+                        href={action.href}
+                        key={`${step.week}-${action.label}`}
+                      >
+                        {action.label}
+                      </Link>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
+function buildFallbackMapSteps(content: TrailContent): TrailMapStep[] {
   return [
     {
-      title: "Entender o ponto de partida",
+      week: 1,
+      title: "Dieta",
+      badge: "Dieta",
       description:
         content.startingPoint.find((item) => item.label === "Plano alimentar")?.value ??
-        "Organizar dados iniciais."
+        "Comece pelo plano alimentar indicado para organizar o ponto de partida.",
+      actions: [{ label: "Abrir plano alimentar", href: "/plano-alimentar" }]
     },
     {
-      title: "Seguir a estratégia alimentar",
-      description: content.eatingStrategy[0] ?? "Executar o plano com consistência."
+      week: 2,
+      title: "Rotina",
+      badge: "Rotina",
+      description: content.eatingStrategy[0] ?? "Transforme o plano em uma rotina simples de executar.",
+      actions: [{ label: "Ver estratégia", href: "/trilha#prioridades" }]
     },
     {
-      title: "Focar nas prioridades",
-      description: content.priorities[0] ?? "Transformar o plano em rotina prática."
+      week: 3,
+      title: "Foco",
+      badge: "Foco",
+      description: content.priorities[0] ?? "Priorize as ações mais importantes para manter consistência.",
+      actions: [{ label: "Ver prioridades", href: "/trilha#prioridades" }]
     },
     {
-      title: "Acompanhar evolução",
+      week: 4,
+      title: "Evolução",
+      badge: "Medidas",
       description:
         content.initialAssessment.length > 0
-          ? "Usar as medidas iniciais como referência para comparar progresso."
-          : "Registrar medidas para acompanhar progresso real."
+          ? "Use as medidas iniciais como referência para comparar progresso."
+          : "Registre medidas para acompanhar progresso real.",
+      actions: [{ label: "Ver avaliação física", href: "/avaliacoes" }]
     }
   ];
+}
+
+function getActiveStepIndex(steps: TrailMapStep[], generatedAt: string | null) {
+  if (!steps.length || !generatedAt) {
+    return 0;
+  }
+
+  const start = new Date(generatedAt);
+
+  if (Number.isNaN(start.getTime())) {
+    return 0;
+  }
+
+  const daysSinceStart = Math.max(
+    0,
+    Math.floor((Date.now() - start.getTime()) / (1000 * 60 * 60 * 24))
+  );
+  const currentWeek = Math.floor(daysSinceStart / 7) + 1;
+  const activeIndex = steps.findIndex((step) => step.week >= currentWeek);
+
+  return activeIndex === -1 ? steps.length - 1 : activeIndex;
+}
+
+function formatMapStepDate(generatedAt: string | null, week: number) {
+  const start = generatedAt ? new Date(generatedAt) : new Date();
+
+  if (Number.isNaN(start.getTime())) {
+    return "-";
+  }
+
+  start.setDate(start.getDate() + (week - 1) * 7);
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
+  }).format(start);
 }
 
 function parseTrailContent(value: Json | null): TrailContent | null {
@@ -303,11 +432,27 @@ function parseTrailContent(value: Json | null): TrailContent | null {
   return {
     headline: renameTrailText(candidate.headline),
     summary: renameTrailText(candidate.summary),
+    mapSteps: isMapStepList(candidate.mapSteps)
+      ? candidate.mapSteps.map(renameTrailMapStep)
+      : [],
     startingPoint: candidate.startingPoint.map(renameTrailItem),
     eatingStrategy: candidate.eatingStrategy.map(renameTrailText),
     priorities: candidate.priorities.map(renameTrailText),
     attentionPoints: candidate.attentionPoints.map(renameTrailText),
     initialAssessment: candidate.initialAssessment
+  };
+}
+
+function renameTrailMapStep(step: TrailMapStep) {
+  return {
+    ...step,
+    title: renameTrailText(step.title),
+    badge: renameTrailText(step.badge),
+    description: renameTrailText(step.description),
+    actions: step.actions.map((action) => ({
+      ...action,
+      label: renameTrailText(action.label)
+    }))
   };
 }
 
@@ -348,6 +493,37 @@ function isItemList(value: Json | undefined): value is TrailItem[] {
         !Array.isArray(item) &&
         typeof item.label === "string" &&
         typeof item.value === "string"
+    )
+  );
+}
+
+function isMapStepList(value: Json | undefined): value is TrailMapStep[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (item) =>
+        item &&
+        typeof item === "object" &&
+        !Array.isArray(item) &&
+        typeof item.week === "number" &&
+        typeof item.title === "string" &&
+        typeof item.badge === "string" &&
+        typeof item.description === "string" &&
+        isMapActionList(item.actions)
+    )
+  );
+}
+
+function isMapActionList(value: unknown): value is TrailMapAction[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (item) =>
+        item &&
+        typeof item === "object" &&
+        !Array.isArray(item) &&
+        typeof item.label === "string" &&
+        typeof item.href === "string"
     )
   );
 }
